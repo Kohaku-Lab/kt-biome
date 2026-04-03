@@ -1,0 +1,10 @@
+name: swe
+version: "1.0"
+base_config: "@kohaku-creatures/creatures/general"
+
+controller:
+  model: gpt-5.4
+  auth_mode: codex-oauth
+  reasoning_effort: "${REASONING:high}"
+
+system_prompt_file: prompts/system.md

@@ -1,0 +1,46 @@
+name: kohaku-creatures
+version: "0.2.0"
+description: "Default creatures and terrariums for KohakuTerrarium"
+author: "Kohaku-Lab"
+repository: "https://github.com/Kohaku-Lab/kohaku-creatures"
+
+creatures:
+  - name: general
+    path: creatures/general
+    description: "Base creature: 19 tools, 6 sub-agents, core personality"
+
+  - name: swe
+    path: creatures/swe
+    description: "Software engineering specialist"
+    base: general
+
+  - name: reviewer
+    path: creatures/reviewer
+    description: "Code review specialist"
+    base: general
+
+  - name: ops
+    path: creatures/ops
+    description: "Infrastructure and operations specialist"
+    base: general
+
+  - name: researcher
+    path: creatures/researcher
+    description: "Research and analysis specialist"
+    base: general
+
+  - name: creative
+    path: creatures/creative
+    description: "Creative writing specialist"
+    base: general
+
+  - name: root
+    path: creatures/root
+    description: "Terrarium management, task delegation"
+    base: general
+
+terrariums:
+  - name: swe_team
+    path: terrariums/swe_team
+    description: "SWE team with root agent, swe, and reviewer"
+    uses: [swe, reviewer, root]
