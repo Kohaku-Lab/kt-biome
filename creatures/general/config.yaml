@@ -2,10 +2,8 @@ name: general
 version: "1.0"
 
 controller:
-  model: "${OPENROUTER_MODEL:google/gemini-3.1-pro-preview}"
-  temperature: 0.5
-  api_key_env: OPENROUTER_API_KEY
-  base_url: https://openrouter.ai/api/v1
+  # LLM is resolved from: --llm flag > default model (kt model default) > inline config
+  # Set a default: kt model default gemini-3.1-pro
   tool_format: native
 
 system_prompt_file: prompts/system.md
@@ -53,5 +51,4 @@ memory:
     # model: jinaai/jina-embeddings-v5-text-nano
     # dimensions: 256
 
-compact:
-  max_tokens: 1000000
+# compact.max_tokens auto-derived from model's max_context

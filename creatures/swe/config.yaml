@@ -3,11 +3,7 @@ version: "1.0"
 base_config: "@kohaku-creatures/creatures/general"
 
 controller:
-  model: gpt-5.4
-  auth_mode: codex-oauth
+  # Default: uses kt model default. Override with --llm gpt-5.4
   reasoning_effort: "${REASONING:high}"
 
 system_prompt_file: prompts/system.md
-
-compact:
-  max_tokens: 272000
