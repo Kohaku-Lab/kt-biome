@@ -16,7 +16,7 @@ kt install ./kohaku-creatures -e
 
 | Name | Description | Base |
 |------|-------------|------|
-| `general` | Base creature: 19 tools, 6 sub-agents, core personality | (none) |
+| `general` | Base creature: 23 tools, 6 sub-agents, web search/fetch, memory search | (none) |
 | `swe` | Software engineering specialist | general |
 | `reviewer` | Code review specialist | general |
 | `ops` | Infrastructure and operations specialist | general |
@@ -29,15 +29,29 @@ kt install ./kohaku-creatures -e
 | Name | Description | Creatures |
 |------|-------------|-----------|
 | `swe_team` | SWE team with root agent | root, swe, reviewer |
+| `auto_research` | Automated experiment loop (Karpathy's autoresearch pattern) | ideator, coder, runner, analyzer |
+| `deep_research` | Multi-agent web research with citations | planner, researcher, synthesizer, critic |
 
 ## Usage
 
 ```bash
+# Set your default model
+kt model default gemini-3.1-pro
+
 # Run a creature directly
 kt run @kohaku-creatures/creatures/swe
 
+# Override model per-run
+kt run @kohaku-creatures/creatures/swe --llm mimo-v2-pro
+
 # Run a terrarium
 kt terrarium run @kohaku-creatures/terrariums/swe_team
+
+# Run auto-research (automated experiment loop)
+kt terrarium run @kohaku-creatures/terrariums/auto_research
+
+# Run deep research (web research with citations)
+kt terrarium run @kohaku-creatures/terrariums/deep_research
 
 # Edit a creature config
 kt edit @kohaku-creatures/creatures/general
