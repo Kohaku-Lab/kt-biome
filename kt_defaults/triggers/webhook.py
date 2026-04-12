@@ -73,9 +73,10 @@ class WebhookTrigger(BaseTrigger):
         # Verify HMAC signature if secret is configured
         if self._secret:
             sig_header = request.headers.get("X-Signature-256", "")
-            expected = "sha256=" + hmac.new(
-                self._secret.encode(), body, hashlib.sha256
-            ).hexdigest()
+            expected = (
+                "sha256="
+                + hmac.new(self._secret.encode(), body, hashlib.sha256).hexdigest()
+            )
             if not hmac.compare_digest(sig_header, expected):
                 return web.Response(status=403, text="Invalid signature")
 
