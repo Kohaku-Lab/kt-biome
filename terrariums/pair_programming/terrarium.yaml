@@ -30,9 +30,19 @@ terrarium:
   name: pair_programming
 
   root:
-    base_config: "@kt-biome/creatures/root"
+    base_config: "@kt-biome/creatures/general"
+    system_prompt_file: prompts/root.md
     controller:
       tool_format: native
+    tools:
+      - { name: terrarium_create, type: builtin }
+      - { name: terrarium_status, type: builtin }
+      - { name: terrarium_stop, type: builtin }
+      - { name: terrarium_send, type: builtin }
+      - { name: terrarium_observe, type: builtin }
+      - { name: terrarium_history, type: builtin }
+      - { name: creature_start, type: builtin }
+      - { name: creature_stop, type: builtin }
 
   creatures:
     - name: driver

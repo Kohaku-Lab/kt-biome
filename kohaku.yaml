@@ -19,11 +19,6 @@ creatures:
     description: "Research and analysis specialist"
     base: general
 
-  - name: root
-    path: creatures/root
-    description: "Terrarium management, task delegation"
-    base: general
-
   - name: music
     path: creatures/music
     description: "Music composition via LilyPond"
@@ -43,12 +38,12 @@ terrariums:
   - name: swe_team
     path: terrariums/swe_team
     description: "Review pipeline: two swe instances, implementer + reviewer via role prompts"
-    uses: [swe, root]
+    uses: [swe]
 
   - name: pair_programming
     path: terrariums/pair_programming
     description: "Driver/navigator pair; two swe instances with asymmetric channel wiring"
-    uses: [swe, root]
+    uses: [swe]
 
   - name: deep_research
     path: terrariums/deep_research

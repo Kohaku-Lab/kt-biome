@@ -23,10 +23,23 @@ terrarium:
   name: swe_team
 
   root:
-    base_config: "@kt-biome/creatures/root"
+    base_config: "@kt-biome/creatures/general"
+    system_prompt_file: prompts/root.md
     controller:
       reasoning_effort: high
       tool_format: native
+    # The framework force-injects the terrarium_* / creature_* toolset on
+    # any root agent regardless of this list; declaring them here makes
+    # the tools appear in the auto-generated prompt tool listing.
+    tools:
+      - { name: terrarium_create, type: builtin }
+      - { name: terrarium_status, type: builtin }
+      - { name: terrarium_stop, type: builtin }
+      - { name: terrarium_send, type: builtin }
+      - { name: terrarium_observe, type: builtin }
+      - { name: terrarium_history, type: builtin }
+      - { name: creature_start, type: builtin }
+      - { name: creature_stop, type: builtin }
 
   creatures:
     - name: swe

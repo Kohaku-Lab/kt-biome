@@ -65,7 +65,6 @@ These are the main reason most people install `kt-biome`.
 | `general` | Broad default creature with the standard built-in tools and sub-agents | (none) |
 | `swe` | Software engineering specialist for coding, repository work, debugging, and implementation | `general` |
 | `researcher` | Research and analysis specialist | `general` |
-| `root` | Root creature for operating terrariums through terrarium management tools | `general` |
 
 **Interest creatures** — domain-specific composition helpers:
 
@@ -75,17 +74,25 @@ These are the main reason most people install `kt-biome`.
 | `video` | HyperFrame video / frame composition specialist working with HTML-based frames | `general` |
 | `diagrammer` | Diagram composition specialist using Mermaid, Graphviz, and D2 | `general` |
 
+`kt-biome` does **not** ship a standalone `root` creature. Each terrarium owns
+its own `root:` block and a co-located `prompts/root.md` (see any
+`terrariums/*/prompts/root.md`). The framework auto-injects the terrarium
+management toolset and a topology-awareness prompt section, so the
+team-local root prompt only needs to carry delegation style and creature
+names specific to that terrarium.
+
 ### Terrariums
 
-Terrariums are included as reusable compositions of those creatures.
-They are useful, but secondary to the creature pack itself.
+Terrariums compose the creatures above into multi-agent workflows. Each
+uses the framework's output-wiring feature for deterministic pipeline
+edges and channels for conditional / group-chat traffic.
 
 | Terrarium | What it is for | Creatures |
 |-----------|----------------|-----------|
-| `swe_team` | Review pipeline: implementer posts changes, reviewer critiques, root coordinates | root + two `swe` instances (implementer / reviewer via role prompts) |
-| `pair_programming` | Driver / navigator pair session with asymmetric channel wiring | root + two `swe` instances (driver / navigator) |
-| `auto_research` | Automated experiment / iteration loop | specialized research workflow |
-| `deep_research` | Multi-agent web research and synthesis | planner / researcher / synthesizer / critic |
+| `swe_team` | Review pipeline: implementer writes, reviewer approves / revises | root + two `swe` instances (implementer / reviewer via role prompts) |
+| `pair_programming` | Driver / navigator pair session — driver→navigator wiring + conditional feedback | root + two `swe` instances (driver / navigator) |
+| `auto_research` | Automated experiment ratchet: ideator → coder → runner → analyzer, with analyzer branching on keep/discard | root + 4 `general` creatures (wiring for the linear edges) |
+| `deep_research` | Multi-agent web research: planner → researcher → synthesizer → critic | root + 4 `general` creatures (wiring for the pipeline, channels for the critic's approve/gap decisions) |
 
 ### Plugins
 
