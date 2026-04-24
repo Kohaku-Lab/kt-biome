@@ -7,3 +7,7 @@ controller:
   reasoning_effort: "${REASONING:high}"
 
 system_prompt_file: prompts/system.md
+
+# ``skills`` inherited from ``general`` is ``["*"]`` — every installed
+# package skill auto-enables. SWE particularly benefits from
+# `git-commit-flow` (path-activates on source files) and `todo-file`.

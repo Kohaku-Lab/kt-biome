@@ -45,6 +45,19 @@ subagents:
   - { name: summarize, type: builtin }
   - { name: research, type: builtin }
 
+# Default-enable every package-provided skill. Local skills under
+# ~/.kohakuterrarium/skills/, <cwd>/.kt/skills/, or the creature's own
+# prompts/skills/ already auto-activate — the wildcard just extends
+# that same policy to skills shipped by installed packages (kt-biome
+# itself plus anything else `kt install`ed). The auto-invoke section
+# in the system prompt is budget-gated (skill_index_budget_bytes,
+# default ~4 KB), so "all skills" doesn't blow up the prompt — overflow
+# skills remain reachable via `##info <name>##` / `##skill <name>##`
+# / `/<name>`. Descendant creatures can override by declaring their
+# own `skills:` list (child replaces base).
+skills:
+  - "*"
+
 output:
   type: stdout
   controller_direct: true

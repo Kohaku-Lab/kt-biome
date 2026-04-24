@@ -93,6 +93,19 @@ prompts:
     path: prompts/git-safety.md
     description: "Shared git-safety rules — do not commit/push/amend without asking; no reset --hard, force push, or hook-skipping."
 
+skills:
+  - name: git-commit-flow
+    path: skills/git-commit-flow
+    description: "Conventional-commit workflow: run tests first, stage deliberately, write a readable message. Activates on common source-file paths."
+
+  - name: pdf-merge
+    path: skills/pdf-merge
+    description: "Merge / split PDFs safely via qpdf or pdftk. Activates on *.pdf paths."
+
+  - name: todo-file
+    path: skills/todo-file
+    description: "Maintain a user-visible todo.md / plan.md across multiple turns. Activates on todo.md / plan.md paths."
+
 triggers:
   - name: webhook
     module: kt_biome.triggers.webhook
