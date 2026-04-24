@@ -88,6 +88,11 @@ io:
     class: DiscordOutput
     description: "Send agent responses to Discord channels"
 
+prompts:
+  - name: git-safety
+    path: prompts/git-safety.md
+    description: "Shared git-safety rules — do not commit/push/amend without asking; no reset --hard, force push, or hook-skipping."
+
 triggers:
   - name: webhook
     module: kt_biome.triggers.webhook
