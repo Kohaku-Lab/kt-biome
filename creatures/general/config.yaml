@@ -58,6 +58,30 @@ subagents:
 skills:
   - "*"
 
+# Default-on plugins: zero-friction upgrades that every creature
+# inheriting from `general` benefits from. Keep this list small and
+# conservative — anything with user-visible behavior changes (e.g.
+# circuit_breaker, injection_scanner) stays opt-in.
+#
+# Child creatures can override individual plugins by name (same-name
+# entry wins) or disable the whole block via `no_inherit: [plugins]`.
+plugins:
+  # Auto-discover AGENTS.md / .cursorrules / .hermes.md from cwd up to
+  # the git root and inject them into every turn's context. Standard
+  # expectation for modern coding agents. Zero cost when no files exist.
+  - name: context_files
+    type: package
+    module: kt_biome.plugins.context_files
+    class: ContextFilesPlugin
+
+  # Inject model-family-specific system-prompt guidance (OpenAI/Codex
+  # vs Gemini/Gemma idioms). Pure pre_llm_call addition — no runtime
+  # cost, no behavior surprises.
+  - name: family_guidance
+    type: package
+    module: kt_biome.plugins.family_guidance
+    class: FamilyGuidancePlugin
+
 output:
   type: stdout
   controller_direct: true

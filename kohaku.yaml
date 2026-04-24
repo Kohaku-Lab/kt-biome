@@ -71,6 +71,16 @@ plugins:
     class: MultimodalGuardPlugin
     description: "Rewrite multimodal LLM input into text-only placeholders before model calls"
 
+  - name: context_files
+    module: kt_biome.plugins.context_files
+    class: ContextFilesPlugin
+    description: "Walk cwd to git root for AGENTS.md / .cursorrules / .hermes.md, scan for prompt-injection, inject per-turn."
+
+  - name: family_guidance
+    module: kt_biome.plugins.family_guidance
+    class: FamilyGuidancePlugin
+    description: "Inject model-family-specific system guidance (openai/codex, gemini/gemma) at pre_llm_call."
+
 tools:
   - name: database
     module: kt_biome.tools.database
