@@ -1,170 +1,269 @@
 # kt-biome
 
-Official out-of-the-box creatures and useful plugin pack for [KohakuTerrarium](https://github.com/Kohaku-Lab/KohakuTerrarium).
+`kt-biome` is the official batteries-included package for [KohakuTerrarium](https://github.com/Kohaku-Lab/KohakuTerrarium).
 
-`kt-biome` is the fastest way to understand how KohakuTerrarium is meant to be used in practice.
-It is not just a demo folder and not only a reference package.
-It gives you ready-to-run creatures you can use directly, inherit from, remix into your own packages, or place into terrariums when you want multi-agent composition.
+If KohakuTerrarium is the framework, `kt-biome` is the practical starting point: a package you can install and use immediately for real work, while also treating it as a reference for how creatures, terrariums, plugins, tools, skills, prompts, and I/O modules are meant to be composed.
 
-## Why install it
+This package is for people who do not want to begin from a blank `config.yaml`.
+It gives you:
 
-With `kt-biome`, you can:
+- ready-to-run creatures
+- reusable terrariums
+- a set of production-oriented plugins and tools
+- packaged skill bundles
+- concrete examples you can inherit from instead of rebuilding from zero
 
-- run useful creatures immediately
-- start from strong default agent configs instead of building from zero
-- inherit from official creatures and only override what you need
-- reuse official terrariums if you want multi-agent setups
-- get a practical plugin pack you can enable in your own configs
+## What `kt-biome` is for
 
-If KohakuTerrarium is the framework, `kt-biome` is the official OOTB package that makes the framework immediately usable.
+Most users install `kt-biome` for one of three reasons:
+
+1. They want a strong default creature immediately.
+2. They want an official base package to inherit from.
+3. They want useful packaged modules they can drop into their own configs.
+
+A common workflow looks like this:
+
+- run `@kt-biome/creatures/general` or `@kt-biome/creatures/swe`
+- decide what you like
+- inherit from that creature in your own package
+- add your own prompts, tools, plugins, or terrariums on top
+
+So `kt-biome` is not just a demo repo and not just documentation by example. It is the official out-of-the-box ecosystem for KohakuTerrarium.
 
 ## Install
 
 ```bash
-# Install from GitHub
+# install from GitHub
 kt install https://github.com/Kohaku-Lab/kt-biome.git
 
-# Or install the local copy in editable mode
+# or install the local checkout in editable mode
 kt install ./kt-biome -e
 ```
 
-After installation, use package paths like:
+After installation, package paths look like:
 
 - `@kt-biome/creatures/general`
 - `@kt-biome/creatures/swe`
-- `@kt-biome/creatures/music`
 - `@kt-biome/terrariums/swe_team`
+- `@kt-biome/terrariums/ralph_loop`
 
 ## Quick start
 
 ```bash
-# Pick a model first
+# pick and log into a model provider first
 kt login codex
 kt model default gpt-5.4
 
-# Run useful creatures directly
+# run a general creature
 kt run @kt-biome/creatures/general
-kt run @kt-biome/creatures/swe
-kt run @kt-biome/creatures/researcher
-kt run @kt-biome/creatures/music
 
-# Optional: run a terrarium
+# run a coding-focused creature
+kt run @kt-biome/creatures/swe
+
+# run a research creature
+kt run @kt-biome/creatures/researcher
+
+# run a terrarium
 kt terrarium run @kt-biome/terrariums/swe_team
 ```
 
-## What is included
+## Where to start
 
-### Creatures
-
-These are the main reason most people install `kt-biome`.
-
-**Main utility creatures** — broadly useful for everyday work:
-
-| Creature | What it is for | Base |
-|----------|----------------|------|
-| `general` | Broad default creature with the standard built-in tools and sub-agents | (none) |
-| `swe` | Software engineering specialist for coding, repository work, debugging, and implementation | `general` |
-| `researcher` | Research and analysis specialist | `general` |
-
-**Interest creatures** — domain-specific composition helpers:
-
-| Creature | What it is for | Base |
-|----------|----------------|------|
-| `music` | Music composition specialist using LilyPond for scores and audio rendering | `general` |
-| `video` | HyperFrame video / frame composition specialist working with HTML-based frames | `general` |
-| `diagrammer` | Diagram composition specialist using Mermaid, Graphviz, and D2 | `general` |
-
-`kt-biome` does **not** ship a standalone `root` creature. Each terrarium owns
-its own `root:` block and a co-located `prompts/root.md` (see any
-`terrariums/*/prompts/root.md`). The framework auto-injects the terrarium
-management toolset and a topology-awareness prompt section, so the
-team-local root prompt only needs to carry delegation style and creature
-names specific to that terrarium.
-
-### Terrariums
-
-Terrariums compose the creatures above into multi-agent workflows. Each
-uses the framework's output-wiring feature for deterministic pipeline
-edges and channels for conditional / group-chat traffic.
-
-| Terrarium | What it is for | Creatures |
-|-----------|----------------|-----------|
-| `swe_team` | Review pipeline: implementer writes, reviewer approves / revises | root + two `swe` instances (implementer / reviewer via role prompts) |
-| `pair_programming` | Driver / navigator pair session — driver→navigator wiring + conditional feedback | root + two `swe` instances (driver / navigator) |
-| `auto_research` | Automated experiment ratchet: ideator → coder → runner → analyzer, with analyzer branching on keep/discard | root + 4 `general` creatures (wiring for the linear edges) |
-| `deep_research` | Multi-agent web research: planner → researcher → synthesizer → critic | root + 4 `general` creatures (wiring for the pipeline, channels for the critic's approve/gap decisions) |
-
-### Plugins
-
-`kt-biome` also ships practical plugins you can turn on in your own creatures.
-
-| Plugin | What it does |
-|--------|---------------|
-| `cost_tracker` | Track token usage and estimated cost per session |
-| `event_logger` | Write structured JSONL logs of agent activity |
-| `multimodal_guard` | Guard or constrain multimodal usage |
-| `rag_reader` | Add RAG-style reading support |
-| `seamless_memory` | Improve memory continuity and retrieval behavior |
-
-## Recommended starting points
-
-### I want a general-purpose creature
+### Start with `general`
 
 ```bash
 kt run @kt-biome/creatures/general
 ```
 
-Start here if you want the broad default experience.
+Use this when you want the default KohakuTerrarium experience with the standard built-in tools and sub-agents, plus packaged skills and low-friction guidance plugins already wired in.
 
-### I want a coding creature
+### Start with `swe`
 
 ```bash
 kt run @kt-biome/creatures/swe
 ```
 
-Start here if your main use case is repository work, implementation, debugging, or coding assistance.
+Use this when your main work is repository navigation, implementation, debugging, tests, and code review. This is the best default for most software projects.
 
-### I want research or analysis
+### Start with `researcher`
 
 ```bash
 kt run @kt-biome/creatures/researcher
 ```
 
-### I want to compose music
+Use this when you want a stronger research-and-analysis posture than `general`.
+
+### Use the domain creatures when you already know the task shape
+
+- `music` for LilyPond-first score and composition work
+- `video` for HyperFrame / HTML-based video or frame workflows
+- `diagrammer` for Mermaid, Graphviz, and D2 work
+
+## Core creatures
+
+### `general`
+
+`general` is the backbone of the package.
+
+It is the creature most other shipped creatures inherit from, and it is meant to feel like the official “default agent” for KohakuTerrarium:
+
+- built-in file and shell tools
+- built-in sub-agents
+- dynamic skill mode
+- wildcard package skill opt-in (`skills: ["*"]`)
+- default-on `context_files` and `family_guidance` plugins
+
+If you only try one creature from this package, try this one first.
+
+### `bounded_general`
+
+`bounded_general` is `general` with a shared iteration cap.
+
+It exists mainly as a practical example of the shared iteration-budget feature. Use it when you want the default general creature but want a hard stop on autonomous runs.
+
+### `swe`
+
+`swe` inherits from `general` and adds a stronger software-engineering workflow and system prompt.
+
+It is the best starting point when the job is:
+
+- inspect a repo
+- implement a change
+- run focused validation
+- prepare a clean commit
+
+### `researcher`, `music`, `video`, `diagrammer`
+
+These inherit from the same base philosophy as `general` but narrow the posture toward a task family.
+
+They are useful both as runnable creatures and as inheritance targets for your own package.
+
+## Terrariums
+
+`kt-biome` ships reusable terrariums that demonstrate multi-creature patterns built on top of the framework’s topology, channels, and output wiring.
+
+There is intentionally no single global `root` creature shipped as a reusable package creature. Each terrarium owns its own root prompt and orchestration behavior.
+
+### Included terrariums
+
+- `swe_team` — an implementation/review pipeline using two `swe` instances
+- `pair_programming` — a driver/navigator pair using two `swe` instances
+- `auto_research` — a multi-step research pipeline over `general` creatures
+- `deep_research` — planner/researcher/synthesizer/critic pipeline
+- `ralph_loop` — an autonomous initializer/worker loop modeled after the Ralph workflow
+
+### The Ralph loop
+
+`ralph_loop` is the most opinionated terrarium in the package.
+
+It uses two creatures:
+
+- `ralph_initializer` — runs once, scaffolds `AGENTS.md`, `progress.md`, and `NOTES.md`, commits them, then exits
+- `ralph_worker` — wakes repeatedly from the `work-log` channel, completes one checkbox item per turn, commits, and posts status back to the same channel
+
+Use it when you want a long-running autonomous implementation loop with durable on-disk task tracking.
+
+Run it with:
 
 ```bash
-kt run @kt-biome/creatures/music
+kt terrarium run @kt-biome/terrariums/ralph_loop/
 ```
 
-Use this when you want a creature oriented toward LilyPond score composition and music drafting.
+Then give the initial goal as your first prompt.
 
-### I want to compose video or frame sequences
+## Plugins
 
-```bash
-kt run @kt-biome/creatures/video
-```
+`kt-biome` ships practical plugins that are meant to be reused directly in your own creatures.
 
-Use this when you want a creature oriented toward HyperFrame HTML-based video and frame composition.
+Some are convenience upgrades, some are safety layers, and some demonstrate newer framework extension points.
 
-### I want to draw diagrams
+### Low-friction default upgrades
 
-```bash
-kt run @kt-biome/creatures/diagrammer
-```
+These improve the default coding experience and are enabled by default on `general`:
 
-Use this when you want a creature oriented toward Mermaid, Graphviz, and D2 diagram composition.
+- `context_files` — walks from the working directory up to the git root, finds files like `AGENTS.md`, `.cursorrules`, and `.hermes.md`, scans them, and injects them into each turn
+- `family_guidance` — adds small model-family-specific guidance blocks for OpenAI/Codex and Gemini-style models
 
-## The intended workflow
+### Session control and runtime behavior
 
-A common workflow with `kt-biome` looks like this:
+- `cost_tracker` — tracks token/cost usage and can now vote to stop the run when budget is exhausted
+- `termination_goal` — stops the run when a scratchpad flag becomes truthy
+- `seamless_memory` — runs internal reader/writer agents against session memory before and after model calls
+- `event_logger` — writes structured JSONL logs of agent activity
+- `multimodal_guard` — rewrites multimodal input into text-only placeholders
 
-### 1. Use a creature directly
+### Safety and harness plugins
 
-```bash
-kt run @kt-biome/creatures/swe
-```
+- `checkpoint` — takes a `git stash` checkpoint before destructive tools
+- `circuit_breaker` — opens per-tool breakers after repeated failures
+- `injection_scanner` — scans tool outputs for prompt-injection patterns and annotates, redacts, or blocks
+- `pev_verifier` — independent verifier harness that checks completion and re-injects issues on failure
 
-### 2. Inherit from it instead of rebuilding from scratch
+### Library-only helper
+
+`RAGReader` is no longer a plugin. It lives at `kt_biome.lib.rag_reader` as a reusable library helper for KohakuRAG-style database reads.
+
+Use it from your own plugin or tool when you want:
+
+- structured node reads
+- BM25 / vector / hybrid retrieval
+- context expansion up the document tree
+- tree-based deduplication
+
+## Skills
+
+`kt-biome` also ships reusable skill bundles as `agentskills.io`-style `SKILL.md` directories.
+
+Because `general` declares `skills: ["*"]`, package-provided skills are enabled by default for creatures that inherit from it.
+
+### Included skill bundles
+
+- `git-commit-flow` — safe commit workflow for source-code changes
+- `pdf-merge` — merge, split, or reorder PDFs with required page-count verification
+- `todo-file` — maintain a user-visible `todo.md` / `plan.md` task list across turns
+
+These can be invoked in three ways:
+
+- automatically, when a matching path pattern activates the skill
+- by model invocation with `##skill <name> ...##`
+- by user invocation with `/<name> ...`
+
+### Skill creation workflow
+
+`kt-biome` also ships:
+
+- `skill_manage` — a tool for creating or patching reusable `SKILL.md` bundles
+- `skill_nudge` — a trigger that periodically reminds the agent to save a repeatable procedure as a skill
+
+This makes the package useful not only for consuming skills, but also for teaching an agent to persist new ones.
+
+## Extra tools, triggers, and I/O modules
+
+Beyond creatures and plugins, `kt-biome` includes reusable packaged modules for more specialized setups.
+
+### Tools
+
+- `bash_docker` — a bash-shaped tool backed by a persistent Docker container
+- `bash_ssh` — a bash-shaped tool backed by a pooled SSH session
+- `database` — SQLite access tool, marked non-concurrency-safe
+- `skill_manage` — reusable skill creation/patch/view tool
+
+### Triggers
+
+- `cron` — full cron-expression trigger with timezone support and backfill behavior
+- `skill_nudge` — periodic reminder to save a reusable skill
+- `webhook` — HTTP webhook trigger
+
+### I/O modules
+
+- Discord input/output modules
+- Telegram input/output modules
+
+The Telegram modules are designed to degrade cleanly when the optional SDK is not installed.
+
+## A good inheritance pattern
+
+A typical downstream package starts from one of these creatures instead of copying configuration by hand.
 
 ```yaml
 name: my_team_coder
@@ -176,62 +275,25 @@ controller:
 system_prompt_file: prompts/system.md
 ```
 
-### 3. Add your own modules or plugins
+Then add only what is specific to your package:
 
-```yaml
-tools:
-  - name: my_tool
-    type: custom
-    module: ./custom/my_tool.py
-    class: MyTool
+- your own system prompt
+- your own plugins
+- your own custom tools
+- your own terrariums
 
-plugins:
-  - name: cost_tracker
-    type: package
-    module: kt_biome.plugins.cost_tracker
-    class: CostTrackerPlugin
-```
+That is the intended use of `kt-biome`: inherit, narrow, and compose.
 
-### 4. Optionally compose creatures into a terrarium
-
-```bash
-kt terrarium run @kt-biome/terrariums/swe_team
-```
-
-That is the real role of `kt-biome`: not just to provide examples, but to provide a usable base ecosystem.
-
-## Using the plugins
-
-Enable packaged plugins in your creature config:
-
-```yaml
-plugins:
-  - name: cost_tracker
-    type: package
-    module: kt_biome.plugins.cost_tracker
-    class: CostTrackerPlugin
-    options:
-      budget_usd: 5.0
-      warn_at: 0.8
-
-  - name: event_logger
-    type: package
-    module: kt_biome.plugins.event_logger
-    class: EventLoggerPlugin
-    options:
-      path: ./logs/events.jsonl
-```
-
-You can use these directly in your own creatures, whether or not those creatures inherit from `kt-biome`.
-
-## Package structure
+## Package layout
 
 ```text
 kt-biome/
-  creatures/      # Official reusable creature configs
-  terrariums/     # Reusable terrarium configs built on those creatures
-  kt_biome/    # Python package for plugins, tools, triggers, I/O
-  kohaku.yaml     # Package manifest
+  creatures/      reusable creature configs
+  terrariums/     reusable terrarium configs
+  prompts/        shared prompt fragments
+  skills/         packaged SKILL.md bundles
+  kt_biome/       Python package for plugins, tools, triggers, I/O, and libs
+  kohaku.yaml     package manifest
 ```
 
 Cross-package references use `@package-name/path` syntax:
@@ -240,18 +302,20 @@ Cross-package references use `@package-name/path` syntax:
 base_config: "@kt-biome/creatures/swe"
 ```
 
-## Build your own package on top
+## Why this package matters
 
-You can treat `kt-biome` as a base ecosystem and publish your own package on top of it.
+KohakuTerrarium is flexible enough that a new user can easily end up staring at a blank config and a lot of choices.
 
-Typical pattern:
+`kt-biome` solves that by answering:
 
-- inherit from `@kt-biome/creatures/general` or `@kt-biome/creatures/swe`
-- add your own prompts, tools, and plugins
-- publish your own package
-- install it with `kt install`
+- what should a good default creature look like?
+- what should a safe coding-oriented creature include?
+- what kinds of plugins belong in a real package?
+- how should skills, prompts, terrariums, triggers, and I/O modules be organized?
 
-That way, users can consume your creatures the same way they consume the official ones.
+That is why this package exists.
+
+It is the official starting ecosystem, not just a bundle of examples.
 
 ## See also
 
@@ -263,5 +327,4 @@ That way, users can consume your creatures the same way they consume the officia
 
 ## License
 
-KohakuTerrarium License 1.0.
-See [LICENSE](LICENSE).
+KohakuTerrarium License 1.0. See [LICENSE](LICENSE).
