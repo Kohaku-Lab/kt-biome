@@ -7,7 +7,7 @@ repository: "https://github.com/Kohaku-Lab/kt-biome"
 creatures:
   - name: general
     path: creatures/general
-    description: "Base creature: 22 tools, 6 sub-agents, core personality"
+    description: "Base creature: 24 tools, 6 sub-agents, core personality"
 
   - name: bounded_general
     path: creatures/bounded_general

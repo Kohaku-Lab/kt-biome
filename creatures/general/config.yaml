@@ -16,6 +16,8 @@ tools:
   - { name: write, type: builtin }
   - { name: edit, type: builtin }
   - { name: multi_edit, type: builtin }
+  - { name: notebook_read, type: builtin }
+  - { name: notebook_edit, type: builtin }
   - { name: glob, type: builtin }
   - { name: grep, type: builtin }
   - { name: tree, type: builtin }
