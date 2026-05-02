@@ -63,6 +63,8 @@ _COUNTER_DEFS: list[tuple[str, str]] = [
     ("kt.subagent.runs", "Sub-agent run count"),
     ("kt.subagent.errors", "Failed sub-agent runs"),
     ("kt.compact.count", "Compaction count"),
+    ("kt.agent.starts", "Agent session starts"),
+    ("kt.agent.stops", "Agent session stops"),
     ("kt.events", "Event count"),
     ("kt.interrupts", "Interrupt count"),
 ]
@@ -97,6 +99,7 @@ class OTelMetricsPlugin(BasePlugin):
                 else "http://localhost:4318/v1/metrics"
             )
         self._endpoint: str = endpoint
+        self._trace_endpoint: str | None = opts.get("trace_endpoint")
         self._export_interval: int = int(opts.get("export_interval", 30))
         self._resource_attrs: dict[str, str] = opts.get("resource_attributes", {})
         self._agent_name: str = ""
@@ -137,7 +140,7 @@ class OTelMetricsPlugin(BasePlugin):
             if c is not None:
                 c.add(value, attrs or {})
         except Exception:
-            logger.debug("metric add failed", metric=name)
+            logger.warning("metric add failed", metric=name)
 
     def _observe(self, name: str, value: int | float, attrs: dict[str, str] | None = None) -> None:
         try:
@@ -145,7 +148,7 @@ class OTelMetricsPlugin(BasePlugin):
             if h is not None:
                 h.record(value, attrs or {})
         except Exception:
-            logger.debug("metric record failed", metric=name)
+            logger.warning("metric record failed", metric=name)
 
     # ── Lifecycle ───────────────────────────────────────────────────
 
@@ -170,8 +173,12 @@ class OTelMetricsPlugin(BasePlugin):
             self._histograms[name] = self._meter.create_histogram(name, description=desc, unit=unit)
 
         if _trace_available:
-            trace_base = self._endpoint.replace("/v1/metrics", "").rstrip("/")
-            span_exporter = OTLPSpanExporter(endpoint=f"{trace_base}/v1/traces")
+            if self._trace_endpoint:
+                trace_endpoint = self._trace_endpoint
+            else:
+                trace_base = self._endpoint.replace("/v1/metrics", "").rstrip("/")
+                trace_endpoint = f"{trace_base}/v1/traces"
+            span_exporter = OTLPSpanExporter(endpoint=trace_endpoint)
             self._tracer_provider = TracerProvider(resource=resource)
             self._tracer_provider.add_span_processor(BatchSpanProcessor(span_exporter))
             self._tracer = self._tracer_provider.get_tracer("kohaku-terrarium")
@@ -203,11 +210,13 @@ class OTelMetricsPlugin(BasePlugin):
             self._meter = None
 
     async def on_agent_start(self) -> None:
-        pass
+        self._inc("kt.agent.starts", 1, {"agent": self._agent_name})
 
     async def on_agent_stop(self) -> None:
-        elapsed = time.monotonic() - self._session_start if self._session_start else 0
-        self._observe("kt.agent.session.duration", elapsed, {"agent": self._agent_name})
+        self._inc("kt.agent.stops", 1, {"agent": self._agent_name})
+        if self._session_start:
+            elapsed = time.monotonic() - self._session_start
+            self._observe("kt.agent.session.duration", elapsed, {"agent": self._agent_name})
 
     # ── LLM hooks ───────────────────────────────────────────────────
 
@@ -224,7 +233,8 @@ class OTelMetricsPlugin(BasePlugin):
         session_id = self._session_id
         key = id(messages)
         start = self._start_times.pop(key, None)
-        elapsed_s = time.monotonic() - start if start is not None else 0
+        timed = start is not None
+        elapsed_s = time.monotonic() - start if timed else 0
         duration_ms = elapsed_s * 1000
         u = usage or {}
         attrs = {"model": model, "request_source": "main", "session_id": session_id}
@@ -233,8 +243,9 @@ class OTelMetricsPlugin(BasePlugin):
         self._inc("kt.llm.tokens.completion", u.get("completion_tokens", 0), attrs)
         self._inc("kt.llm.tokens.cache_read", u.get("cached_tokens", 0), attrs)
         self._inc("kt.llm.tokens.cache_creation", u.get("cache_write_tokens", 0), attrs)
-        self._inc("kt.llm.active_time", elapsed_s, attrs)
-        self._observe("kt.llm.duration", duration_ms, attrs)
+        if timed:
+            self._inc("kt.llm.active_time", elapsed_s, attrs)
+            self._observe("kt.llm.duration", duration_ms, attrs)
 
         span = self._active_spans.pop(key, None)
         if span is not None:
@@ -294,7 +305,7 @@ class OTelMetricsPlugin(BasePlugin):
         self._start_times[job_id] = time.monotonic()
         if self._tracer is not None:
             span = self._tracer.start_span("kt.subagent.run", attributes={
-                "name": kwargs.get("name", ""),
+                "subagent_name": kwargs.get("name", ""),
                 "request_source": "subagent",
             })
             self._active_spans[job_id] = span
@@ -308,7 +319,7 @@ class OTelMetricsPlugin(BasePlugin):
         duration = (time.monotonic() - start) * 1000 if start is not None else 0
         success = getattr(result, "success", True)
         turns = getattr(result, "turns", 0)
-        attrs = {"name": name, "request_source": "subagent", "session_id": session_id}
+        attrs = {"subagent_name": name, "request_source": "subagent", "session_id": session_id}
         self._inc("kt.subagent.runs", 1, attrs)
         self._observe("kt.subagent.duration", duration, attrs)
         self._observe("kt.subagent.turns", turns, attrs)

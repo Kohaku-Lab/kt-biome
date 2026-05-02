@@ -133,7 +133,7 @@ async def test_graceful_no_otel() -> None:
 
 @pytest.mark.asyncio
 async def test_on_load_creates_instruments() -> None:
-    """2. on_load creates all 14 counters and 7 histograms via the meter."""
+    """2. on_load creates all 16 counters and 7 histograms via the meter."""
     mock_meter = MagicMock()
     mock_provider = MagicMock()
     mock_provider.get_meter.return_value = mock_meter
@@ -298,14 +298,14 @@ async def test_subagent_run() -> None:
         result = SimpleNamespace(success=False, turns=7)
         await plugin.post_subagent_run(result, name="worker", job_id="j4")
 
-    plugin._counters["kt.subagent.runs"].add.assert_called_with(1, {"name": "worker", "request_source": "subagent", "session_id": "sess-abc123"})
+    plugin._counters["kt.subagent.runs"].add.assert_called_with(1, {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"})
     plugin._histograms["kt.subagent.duration"].record.assert_called_with(
-        1000.0, {"name": "worker", "request_source": "subagent", "session_id": "sess-abc123"}
+        1000.0, {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"}
     )
     plugin._histograms["kt.subagent.turns"].record.assert_called_with(
-        7, {"name": "worker", "request_source": "subagent", "session_id": "sess-abc123"}
+        7, {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"}
     )
-    plugin._counters["kt.subagent.errors"].add.assert_called_with(1, {"name": "worker", "request_source": "subagent", "session_id": "sess-abc123"})
+    plugin._counters["kt.subagent.errors"].add.assert_called_with(1, {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"})
 
 
 @pytest.mark.asyncio
@@ -364,6 +364,24 @@ async def test_session_duration() -> None:
     plugin._histograms["kt.agent.session.duration"].record.assert_called_with(
         42.0, {"agent": "session-test"}
     )
+    plugin._counters["kt.agent.stops"].add.assert_called_with(1, {"agent": "session-test"})
+
+
+@pytest.mark.asyncio
+async def test_on_agent_start_increments_starts() -> None:
+    plugin = _make_plugin()
+    plugin._agent_name = "test-agent"
+    await plugin.on_agent_start()
+    plugin._counters["kt.agent.starts"].add.assert_called_with(1, {"agent": "test-agent"})
+
+
+@pytest.mark.asyncio
+async def test_on_agent_stop_increments_stops() -> None:
+    plugin = _make_plugin()
+    plugin._agent_name = "test-agent"
+    plugin._session_start = 100.0
+    await plugin.on_agent_stop()
+    plugin._counters["kt.agent.stops"].add.assert_called_with(1, {"agent": "test-agent"})
 
 
 def test_metric_names_immutable() -> None:
@@ -371,7 +389,7 @@ def test_metric_names_immutable() -> None:
     counter_names = [name for name, _ in mod._COUNTER_DEFS]
     histogram_names = [name for name, _, _ in mod._HISTOGRAM_DEFS]
 
-    assert len(counter_names) == 14
+    assert len(counter_names) == 16
     assert len(histogram_names) == 7
 
     expected_counters = {
@@ -387,6 +405,8 @@ def test_metric_names_immutable() -> None:
         "kt.subagent.runs",
         "kt.subagent.errors",
         "kt.compact.count",
+        "kt.agent.starts",
+        "kt.agent.stops",
         "kt.events",
         "kt.interrupts",
     }
@@ -478,7 +498,7 @@ async def test_subagent_attrs_include_request_source_and_session() -> None:
         result = SimpleNamespace(success=True, turns=3)
         await plugin.post_subagent_run(result, name="worker", job_id="j10")
 
-    expected_attrs = {"name": "worker", "request_source": "subagent", "session_id": "sess-abc123"}
+    expected_attrs = {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"}
     plugin._counters["kt.subagent.runs"].add.assert_called_with(1, expected_attrs)
     plugin._histograms["kt.subagent.duration"].record.assert_called_with(2000.0, expected_attrs)
     plugin._histograms["kt.subagent.turns"].record.assert_called_with(3, expected_attrs)
@@ -505,9 +525,9 @@ async def test_llm_active_time_accumulates() -> None:
     assert calls[1][0][0] == pytest.approx(1.5)
 
 
-def test_counter_defs_now_14() -> None:
-    """22. Counter defs increased from 12 to 14 (cached→cache_read+cache_creation + active_time)."""
-    assert len(mod._COUNTER_DEFS) == 14
+def test_counter_defs_now_16() -> None:
+    """22. Counter defs total 16 (cache_read/creation split + active_time + starts/stops)."""
+    assert len(mod._COUNTER_DEFS) == 16
 
 
 # ── Trace span tests (TDD — failing until tracer implemented) ─────────
@@ -618,7 +638,7 @@ async def test_subagent_run_emits_span() -> None:
     spans = [s for s in recorder.spans if s.name == "kt.subagent.run"]
     assert len(spans) == 1
     s = spans[0]
-    assert s.attributes.get("name") == "worker"
+    assert s.attributes.get("subagent_name") == "worker"
     assert s.attributes.get("request_source") == "subagent"
     assert s.attributes.get("session_id") == "sess-abc123"
     assert s.attributes.get("success") is True

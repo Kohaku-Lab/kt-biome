@@ -12,7 +12,7 @@ processors:
         statements:
           - delete_key(attributes, "session_id")
   deltatocumulative:
-    max_stale: 720h
+    max_stale: 48h
 
 exporters:
   prometheus:
