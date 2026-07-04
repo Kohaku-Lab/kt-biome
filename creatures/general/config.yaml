@@ -28,11 +28,7 @@ tools:
   - { name: json_write, type: builtin }
   - { name: send_message, type: builtin }
   - { name: stop_task, type: builtin }
-  # Setup-able triggers exposed as individual tools — calling one installs
-  # the trigger in the background and returns its trigger_id. See
-  # src/kohakuterrarium/modules/trigger/callable.py.
-  # Note: watch_channel is omitted here — it is more terrarium-specific
-  # and opt-in per-creature in the relevant team config.
+  - { name: delete_trigger, type: builtin }
   - { name: add_timer, type: trigger }
   - { name: add_schedule, type: trigger }
   - { name: search_memory, type: builtin }
