@@ -132,6 +132,37 @@ class TestWalkUp:
         assert "Use the Read tool." in injected["content"]
 
     @pytest.mark.asyncio
+    async def test_walks_from_agent_pwd_not_process_cwd(
+        self, tmp_path: Path, cwd_chdir
+    ):
+        """Regression: default walk_from='cwd' must walk from the AGENT's
+        working dir (its pwd), not the host process cwd. Previously it used
+        Path.cwd(), so a kt process launched inside repo B injected B's
+        context files into an agent whose pwd was repo A."""
+        agent_dir = tmp_path / "agent"
+        agent_dir.mkdir()
+        _fake_git_repo(agent_dir)
+        (agent_dir / "AGENTS.md").write_text("# Agent project\nreal-agent-context\n")
+        decoy = tmp_path / "decoy"
+        decoy.mkdir()
+        _fake_git_repo(decoy)
+        (decoy / "AGENTS.md").write_text("# Decoy repo\nWRONG-process-cwd-context\n")
+        cwd_chdir(decoy)  # process cwd points at the decoy
+
+        plugin = _make_plugin({"files": ["AGENTS.md"]})  # default walk_from="cwd"
+        await plugin.on_load(PluginContext(agent_name="general", working_dir=agent_dir))
+
+        msgs = [
+            {"role": "system", "content": "sys"},
+            {"role": "user", "content": "hi"},
+        ]
+        result = await plugin.pre_llm_call(msgs)
+        assert result is not None
+        injected = result[1]["content"]
+        assert "real-agent-context" in injected
+        assert "WRONG-process-cwd-context" not in injected
+
+    @pytest.mark.asyncio
     async def test_missing_files_are_noop(self, tmp_path: Path, cwd_chdir):
         root = _fake_git_repo(tmp_path)
         cwd_chdir(root)

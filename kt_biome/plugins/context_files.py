@@ -29,7 +29,7 @@ Usage in config.yaml::
             - .kt/context.md
             - .cursorrules
             - .hermes.md
-          walk_from: cwd          # cwd | agent_path | <fixed path>
+          walk_from: cwd          # cwd/agent_path = the agent's pwd; or <fixed path>
           stop_at: git_root       # git_root | filesystem_root | <fixed path>
           max_total_bytes: 32768
           max_per_file_bytes: 16384
@@ -313,12 +313,13 @@ class ContextFilesPlugin(BasePlugin):
 
     def _resolve_walk_root(self) -> Path:
         mode = self._opts.walk_from
-        if mode == "cwd":
-            return Path.cwd()
-        if mode == "agent_path":
-            if self._ctx and self._ctx.working_dir:
-                return Path(self._ctx.working_dir)
-            return Path.cwd()
+        # "cwd" is the AGENT's working directory (its pwd), NOT the host
+        # process's Path.cwd(): a kt server/CLI process almost never shares
+        # its launch dir with the agent, so process cwd would inject an
+        # unrelated repo's context files. "agent_path" is an alias.
+        if mode in ("cwd", "agent_path"):
+            wd = self._agent_working_dir()
+            return wd if wd is not None else Path.cwd()
         # Treat as fixed path.
         try:
             p = Path(mode).expanduser().resolve()
@@ -327,6 +328,24 @@ class ContextFilesPlugin(BasePlugin):
         except Exception:
             pass
         return Path.cwd()
+
+    def _agent_working_dir(self) -> Path | None:
+        """The agent's current working directory (its ``pwd``).
+
+        Prefers the live executor working dir so a runtime ``cd`` is
+        honoured, then the load-time context ``working_dir``. ``None`` only
+        when no agent context is bound (e.g. invoked without ``on_load``),
+        letting the caller fall back to the process cwd."""
+        ctx = self._ctx
+        if ctx is None:
+            return None
+        executor = getattr(getattr(ctx, "_host_agent", None), "executor", None)
+        live = getattr(executor, "_working_dir", None)
+        if live:
+            return Path(live)
+        if ctx.working_dir:
+            return Path(ctx.working_dir)
+        return None
 
     def _resolve_stop_anchor(self, start: Path) -> Path | None:
         mode = self._opts.stop_at
