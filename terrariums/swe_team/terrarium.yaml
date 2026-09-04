@@ -27,7 +27,6 @@ terrarium:
     system_prompt_file: prompts/root.md
     controller:
       reasoning_effort: high
-      tool_format: native
     # Privileged group_* tools (group_status / group_add_node /
     # group_channel / group_wire / group_send / send_channel ...) are
     # force-registered on every root by the engine — no explicit
@@ -39,11 +38,10 @@ terrarium:
       system_prompt_file: prompts/swe.md
       controller:
         reasoning_effort: xhigh
-        tool_format: native
       # Every implementer turn-end → reviewer (wiring). Lifecycle → root.
       output_wiring:
         - reviewer
-        - { to: root, with_content: false }
+        - { to: root, with_content: true }
       channels:
         listen: [tasks, feedback, team_chat]
         can_send: [team_chat]
@@ -53,11 +51,10 @@ terrarium:
       system_prompt_file: prompts/reviewer.md
       controller:
         reasoning_effort: high
-        tool_format: native
       # Reviewer is CONDITIONAL (approve vs. revise). Outbound goes on
       # channels. Only lifecycle pings root.
       output_wiring:
-        - { to: root, with_content: false }
+        - { to: root, with_content: true }
       channels:
         listen: [team_chat]
         can_send: [feedback, results, team_chat]

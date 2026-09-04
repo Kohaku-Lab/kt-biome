@@ -29,8 +29,6 @@ terrarium:
   root:
     base_config: "@kt-biome/creatures/general"
     system_prompt_file: prompts/root.md
-    controller:
-      tool_format: native
     # Privileged group_* tools are force-registered on the root by the
     # engine — no explicit ``tools:`` block needed here.
 

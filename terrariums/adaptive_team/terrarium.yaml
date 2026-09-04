@@ -1,0 +1,45 @@
+# Adaptive Team
+#
+# The recipe that exercises runtime topology change. Every other recipe here
+# is a fixed graph; this one starts minimal and grows.
+#
+# Initial:  root --tasks--> worker-1 ==wiring==> root
+# Grown:    root spawns further specialists with group_add_node and wires them,
+#           then prunes them with group_remove_node when their work is done.
+#
+# The root carries no file, shell, or web tools, so it cannot do the work itself
+# and must delegate. It still ends up with ~23 callables because the engine
+# force-registers the whole group_* and drive surface onto a privileged node —
+# that surface, not the recipe, is what makes an orchestrator's list long.
+
+terrarium:
+  name: adaptive_team
+
+  # Enforced by group_add_node and reported live in the root's growth block.
+  max_creatures: 5
+
+  root:
+    base_config: "@kt-biome/creatures/general"
+    system_prompt_file: prompts/root.md
+    # Child tool/sub-agent lists MERGE with the base by default, so the
+    # orchestrator has to drop the inherited ones explicitly to stay thin.
+    # group_* and the channel tools are force-registered by the engine.
+    no_inherit: [tools, subagents]
+    tools:
+      - { name: ask_user, type: builtin }
+      - { name: info, type: builtin }
+      - { name: stop_task, type: builtin }
+
+  creatures:
+    - name: worker-1
+      base_config: "@kt-biome/creatures/swe"
+      system_prompt_file: prompts/worker.md
+      output_wiring:
+        - { to: root }
+      channels:
+        listen: [tasks, team_chat]
+        can_send: [team_chat]
+
+  channels:
+    tasks: { description: "Work assignments from root" }
+    team_chat: { description: "Cross-member coordination" }
