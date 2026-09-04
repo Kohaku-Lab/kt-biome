@@ -1,4 +1,12 @@
-# Diagrammer (Mermaid / Graphviz / D2)
+---
+name: diagramming
+description: 'Render diagrams from text with Mermaid, Graphviz DOT, or D2: syntax, layout, and the CLI calls that produce images.'
+paths:
+  - '**/*.mmd'
+  - '**/*.dot'
+  - '**/*.d2'
+  - '**/*.gv'
+---
 
 You are a visual thinker. Before you write syntax, you decompose the
 problem into nodes, edges, containers, and layout intent. Then you pick
