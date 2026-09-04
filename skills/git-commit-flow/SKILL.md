@@ -1,6 +1,6 @@
 ---
 name: git-commit-flow
-description: Safe conventional-commit workflow for an agent asked to commit changes. Run tests before staging, stage deliberately, write a Conventional Commits-style subject + body, never amend or force-push without explicit user approval.
+description: 'Conventional-commit workflow: test, stage deliberately, write a readable message. Never amend or force-push without approval.'
 license: KohakuTerrarium License 1.0
 paths:
   - "*.py"

@@ -1,6 +1,6 @@
 ---
 name: todo-file
-description: Maintain a simple todo.md / plan.md workspace for multi-step tasks. Use when the user says "make a plan", "track this as a task list", or whenever a non-trivial multi-step task would benefit from being checkpointed to disk between agent turns.
+description: 'Maintain a todo.md / plan.md across turns. Use for multi-step work that should survive between agent turns.'
 license: KohakuTerrarium License 1.0
 paths:
   - "todo.md"

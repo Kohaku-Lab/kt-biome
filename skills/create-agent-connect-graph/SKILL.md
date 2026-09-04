@@ -1,6 +1,6 @@
 ---
 name: create-agent-connect-graph
-description: Create a custom KohakuTerrarium creature folder, then spawn and connect it into the current terrarium graph with group tools. Use when asked to make a new agent/creature/worker/specialist and wire it into a team.
+description: 'Create a creature folder and wire it into the running graph. Use when asked to add an agent, worker, or specialist to a team.'
 license: KohakuTerrarium License 1.0
 paths:
   - "creatures/**/config.yaml"

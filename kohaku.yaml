@@ -1,5 +1,5 @@
 name: kt-biome
-version: "2.0.2"
+version: "3.0.0"
 description: "Default creatures, terrariums, plugins, tools, I/O, and triggers for KohakuTerrarium"
 author: "Kohaku-Lab"
 repository: "https://github.com/Kohaku-Lab/kt-biome"
@@ -7,58 +7,33 @@ repository: "https://github.com/Kohaku-Lab/kt-biome"
 creatures:
   - name: general
     path: creatures/general
-    description: "Base creature: 24 tools, 6 sub-agents, core personality"
-
-  - name: bounded_general
-    path: creatures/bounded_general
-    description: "general with a 50-turn shared iteration budget (H.1 extension-point demo)"
-    base: general
+    description: "Base creature: 19 callables, core operating principles"
 
   - name: swe
     path: creatures/swe
-    description: "Software engineering specialist"
+    description: "Software engineering: implement, debug, review"
     base: general
 
   - name: researcher
     path: creatures/researcher
-    description: "Research and analysis specialist"
-    base: general
-
-  - name: music
-    path: creatures/music
-    description: "Music composition via LilyPond"
-    base: general
-
-  - name: video
-    path: creatures/video
-    description: "HyperFrame video/frame composition (HTML-based)"
-    base: general
-
-  - name: diagrammer
-    path: creatures/diagrammer
-    description: "Diagram composition via Mermaid, Graphviz, and D2"
+    description: "Investigate questions and report findings with sources"
     base: general
 
 terrariums:
   - name: swe_team
     path: terrariums/swe_team
-    description: "Review pipeline: two swe instances, implementer + reviewer via role prompts"
-    uses: [swe]
-
-  - name: pair_programming
-    path: terrariums/pair_programming
-    description: "Driver/navigator pair; two swe instances with asymmetric channel wiring"
+    description: "Review pipeline: implementer + reviewer, wiring plus a conditional branch"
     uses: [swe]
 
   - name: deep_research
     path: terrariums/deep_research
-    description: "Multi-agent web research: planner, researcher, synthesizer, critic"
+    description: "Fan-out / fan-in research: planner, researcher, synthesizer, critic"
     uses: [general]
 
-  - name: auto_research
-    path: terrariums/auto_research
-    description: "Automated research loop: ideator, coder, runner, analyzer"
-    uses: [general]
+  - name: adaptive_team
+    path: terrariums/adaptive_team
+    description: "Self-growing team: a privileged root spawns and prunes specialists at runtime"
+    uses: [general, swe]
 
 plugins:
   - name: cost_tracker
@@ -189,6 +164,18 @@ skills:
   - name: create-agent-connect-graph
     path: skills/create-agent-connect-graph
     description: "Create a custom creature folder and connect it into the active terrarium graph with group tools."
+
+  - name: diagramming
+    path: skills/diagramming
+    description: "Render diagrams from text with Mermaid, Graphviz, or D2. Activates on diagram source paths."
+
+  - name: lilypond
+    path: skills/lilypond
+    description: "Compose and engrave sheet music with LilyPond. Activates on *.ly paths."
+
+  - name: hyperframe
+    path: skills/hyperframe
+    description: "Compose videos and frame sequences with HyperFrame. Activates on HyperFrame projects."
 
 triggers:
   - name: webhook

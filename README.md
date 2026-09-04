@@ -92,11 +92,13 @@ kt run @kt-biome/creatures/researcher
 
 Use this when you want a stronger research-and-analysis posture than `general`.
 
-### Use the domain creatures when you already know the task shape
+### Domain work is a skill, not a creature
 
-- `music` for LilyPond-first score and composition work
-- `video` for HyperFrame / HTML-based video or frame workflows
-- `diagrammer` for Mermaid, Graphviz, and D2 work
+LilyPond scores, HyperFrame video, and Mermaid / Graphviz / D2 diagrams used to
+be three separate creatures carrying 6-15 KB of system prompt each. They are now
+skills (`lilypond`, `hyperframe`, `diagramming`) that activate on the relevant
+file paths, so every creature can do that work and none of them pays for it
+up front.
 
 ## Core creatures
 
@@ -106,19 +108,19 @@ Use this when you want a stronger research-and-analysis posture than `general`.
 
 It is the creature most other shipped creatures inherit from, and it is meant to feel like the official “default agent” for KohakuTerrarium:
 
-- built-in file and shell tools
-- built-in sub-agents
-- dynamic skill mode
+- twenty callables: file, search, shell, web, and interaction tools plus four
+  sub-agents — deliberately inside the range where tool selection stays reliable
+- `tool_doc_mode: full` — every tool's usage tier is inlined, so there is no
+  `info` round-trip before first use. Set `standard` for a ~3.7k-token prompt
+  instead of ~7.5k; the reference tier stays behind `info` either way
 - wildcard package skill opt-in (`skills: ["*"]`)
 - default-on `context_files` and `family_guidance` plugins
 
+Tools it deliberately omits: `edit` (use `multi_edit`; `edit` remains for
+unified diffs and text tool-call formats), the notebook pair, and `scratchpad`.
+Add any of them with two lines in `tools:`.
+
 If you only try one creature from this package, try this one first.
-
-### `bounded_general`
-
-`bounded_general` is `general` with a shared iteration cap.
-
-It exists mainly as a practical example of the shared iteration-budget feature. Use it when you want the default general creature but want a hard stop on autonomous runs.
 
 ### `swe`
 
@@ -131,11 +133,15 @@ It is the best starting point when the job is:
 - run focused validation
 - prepare a clean commit
 
-### `researcher`, `music`, `video`, `diagrammer`
+### `researcher`
 
-These inherit from the same base philosophy as `general` but narrow the posture toward a task family.
+`researcher` inherits from `general` and narrows the posture toward
+investigation: plan the search, prefer primary sources, keep every claim
+attached to where it came from, and say what could not be established.
 
-They are useful both as runnable creatures and as inheritance targets for your own package.
+The three shipped creatures are three *stances* toward the user's work —
+generalist, implementer, investigator — not three domains. Domain knowledge
+belongs in skills.
 
 ## Terrariums
 
@@ -145,10 +151,19 @@ There is intentionally no single global `root` creature shipped as a reusable pa
 
 ### Included terrariums
 
-- `swe_team` — an implementation/review pipeline using two `swe` instances
-- `pair_programming` — a driver/navigator pair using two `swe` instances
-- `auto_research` — a multi-step research pipeline over `general` creatures
-- `deep_research` — planner/researcher/synthesizer/critic pipeline
+- `swe_team` — implementer/reviewer pipeline: output wiring for the
+  unconditional hand-off, channels for the approve-vs-revise branch
+- `deep_research` — planner/researcher/synthesizer/critic, fan-out and fan-in
+  with a feedback loop
+- `adaptive_team` — a **self-growing** team: a privileged root with no file,
+  shell, or web tools spawns and prunes specialists at runtime, under a declared
+  `max_creatures` cap that `group_add_node` enforces
+
+Role prompts here carry identity only. Channel lists, output wires, arrival-tag
+legends, and the graph-mutation surface are injected live by the framework from
+the running topology, so they cannot go stale when a recipe changes.
+
+`pair_programming` and `auto_research` moved to `examples/terrariums/`.
 
 ## Plugins
 

@@ -1,6 +1,6 @@
 ---
 name: pdf-merge
-description: Merge, split, or reorder PDF files. Use when the user mentions combining PDFs, extracting pages, or any "glue these PDFs together" request. Activates automatically in directories containing .pdf files.
+description: 'Merge, split, or reorder PDFs. Activates on directories containing .pdf files.'
 license: KohakuTerrarium License 1.0
 paths:
   - "*.pdf"
