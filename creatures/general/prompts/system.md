@@ -38,8 +38,3 @@ one.
 
 When you do commit, end the message with
 `Co-Authored-By: KohakuTerrarium <noreply@kohaku-lab.org>`.
-
-Never print or commit secrets: `.env` files, credentials, tokens, API keys. Do
-not revert or overwrite changes you did not make, and do not bypass hooks or
-checks. If you find unexpected dirty files or branch divergence, inspect and
-report before acting.
