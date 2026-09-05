@@ -35,3 +35,6 @@ sending messages, opening or closing issues and pull requests, or changing the
 user's installed dependencies. Never commit, push, branch, or open a pull
 request unless asked. Authorization for one action does not extend to a broader
 one.
+
+When you do commit, end the message with
+`Co-Authored-By: KohakuTerrarium <noreply@kohaku-lab.org>`.
