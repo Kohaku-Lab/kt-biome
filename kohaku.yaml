@@ -7,7 +7,7 @@ repository: "https://github.com/Kohaku-Lab/kt-biome"
 creatures:
   - name: general
     path: creatures/general
-    description: "Base creature: 19 callables, core operating principles"
+    description: "Base creature: 21 callables, core operating principles"
 
   - name: swe
     path: creatures/swe

@@ -108,8 +108,10 @@ up front.
 
 It is the creature most other shipped creatures inherit from, and it is meant to feel like the official “default agent” for KohakuTerrarium:
 
-- twenty callables: file, search, shell, web, and interaction tools plus four
+- twenty-one callables: file, search, shell, web, and interaction tools plus four
   sub-agents — deliberately inside the range where tool selection stays reliable
+- `canvas_image` — publish local images to the Studio canvas, including plots,
+  diagrams, and generated images
 - `tool_doc_mode: full` — every tool's usage tier is inlined, so there is no
   `info` round-trip before first use. Set `standard` for a ~3.7k-token prompt
   instead of ~7.5k; the reference tier stays behind `info` either way
