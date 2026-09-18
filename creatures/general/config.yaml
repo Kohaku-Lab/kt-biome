@@ -14,7 +14,7 @@ system_prompt_file: prompts/system.md
 # reference tier stays behind `info`.
 tool_doc_mode: full
 
-# Twenty callables, inside the range where tool selection stays reliable.
+# Twenty-one callables, inside the range where tool selection stays reliable.
 # Channel, graph, and trigger tools are registered by the engine when the
 # runtime state that gives them meaning exists.
 tools:
@@ -33,6 +33,7 @@ tools:
   - { name: web_search, type: builtin }
   - { name: ask_user, type: builtin }
   - { name: show_card, type: builtin }
+  - { name: canvas_image, type: builtin }
   - { name: stop_task, type: builtin }
 
 subagents:
