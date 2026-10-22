@@ -2,7 +2,7 @@
 
 ## 4.0.0
 
-Requires KohakuTerrarium >=2.1.8,<3.0.0.
+Requires KohakuTerrarium >2.1.7,<3.0.0.
 
 ### Breaking changes
 
@@ -28,8 +28,9 @@ Requires KohakuTerrarium >=2.1.8,<3.0.0.
 
 ### Upgrade notes
 
-Upgrade KT to 2.1.8 or later before installing this release. KT warns and skips
-unknown or removed builtin sub-agent config entries, including in strict mode,
+Use a KT nightly containing the inspection-helper changes or a later stable
+release satisfying >2.1.7,<3.0.0. KT warns and skips unknown or removed builtin
+sub-agent config entries, including in strict mode,
 so updating KT before an older kt-biome installation does not prevent startup.
 Remove stale delegation instructions from downstream configurations.
 
