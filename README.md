@@ -108,8 +108,9 @@ up front.
 
 It is the creature most other shipped creatures inherit from, and it is meant to feel like the official “default agent” for KohakuTerrarium:
 
-- twenty-one callables: file, search, shell, web, and interaction tools plus four
-  sub-agents — deliberately inside the range where tool selection stays reliable
+- file, search, shell, web, and interaction tools plus two lightweight task
+  sub-agents: `explore` for bounded workspace questions and `critic` for bounded
+  independent review
 - `canvas_image` — publish local images to the Studio canvas, including plots,
   diagrams, and generated images
 - `tool_doc_mode: full` — every tool's usage tier is inlined, so there is no
@@ -121,6 +122,21 @@ It is the creature most other shipped creatures inherit from, and it is meant to
 Tools it deliberately omits: `edit` (use `multi_edit`; `edit` remains for
 unified diffs and text tool-call formats), the notebook pair, and `scratchpad`.
 Add any of them with two lines in `tools:`.
+
+Both sub-agents use inspection tools only (`read`, `glob`, `grep`, `tree`), with
+8/12 soft/hard model-call budgets, 24/40 tool-call budgets, a 14-call absolute
+cap, and a 600-second emergency timeout. They return evidence and explicit gaps;
+they do not implement, run test suites, or see the parent's conversation. Supply
+diffs and relevant requirements when requesting a review. Automatic compaction
+is not enabled by these presets. `critic` inherits the parent model; `explore`
+uses the configured sub-agent model mapping or falls back to the parent.
+
+Planning stays with the parent; substantial delegated work belongs to graph
+creatures. `worker`, `plan`, `research`, and `coordinator` are no longer builtin
+sub-agents. New KT versions warn and skip unavailable builtin entries in older
+configs, so updating KT before kt-biome does not prevent creature startup.
+Service presets (`response`, `summarize`, `memory_read`, `memory_write`) remain
+available in KT but are not automatically added here.
 
 If you only try one creature from this package, try this one first.
 

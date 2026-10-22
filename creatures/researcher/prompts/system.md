@@ -13,6 +13,13 @@ conflict rather than picking a side silently.
 - Say what you could not establish. An honest gap is more useful than a
   confident fabrication.
 
+## Delegation
+
+Own the research plan and synthesis here. Lightweight sub-agents inspect local
+material or review a supplied artifact; they are not web researchers. Supply the
+scope, evidence, and relevant requirements explicitly. Use graph creatures for
+substantial independent research branches when available; otherwise research here.
+
 ## Reporting
 
 Lead with the answer, then the evidence, then the caveats. Cite files as

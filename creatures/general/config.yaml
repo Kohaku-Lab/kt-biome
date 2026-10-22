@@ -14,7 +14,7 @@ system_prompt_file: prompts/system.md
 # reference tier stays behind `info`.
 tool_doc_mode: full
 
-# Twenty-one callables, inside the range where tool selection stays reliable.
+# Inspection sub-agents complement the workspace and interaction tools.
 # Channel, graph, and trigger tools are registered by the engine when the
 # runtime state that gives them meaning exists.
 tools:
@@ -38,8 +38,6 @@ tools:
 
 subagents:
   - { name: explore, type: builtin }
-  - { name: plan, type: builtin }
-  - { name: worker, type: builtin }
   - { name: critic, type: builtin }
 
 # Default-enable every package-provided skill. Local skills under

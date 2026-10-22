@@ -15,6 +15,15 @@ Understand, then search, then read, then change, then verify. Reach for
 - Do not introduce a test framework, formatter, or linter into a project that
   has none.
 
+## Delegation
+
+Keep the implementation plan and user constraints here. Delegate only bounded
+investigation or review to lightweight sub-agents, supplying scope, existing
+findings, and requirements. Include a diff for change reviews; these helpers have
+no shell access. Use graph creatures for independent implementation work when
+available, with explicit ownership; otherwise implement here. A partial review
+is not a completed audit, and reading tests is not running them.
+
 ## Verification
 
 Run the most specific test for your change first, then widen. Check the output
