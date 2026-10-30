@@ -29,22 +29,31 @@ from kohakuterrarium.utils.logging import get_logger
 logger = get_logger(__name__)
 
 try:
-    from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+    from opentelemetry.exporter.otlp.proto.http.metric_exporter import (
+        OTLPMetricExporter,
+    )
     from opentelemetry.sdk.metrics import Counter, Histogram, MeterProvider
-    from opentelemetry.sdk.metrics.export import AggregationTemporality, PeriodicExportingMetricReader
+    from opentelemetry.sdk.metrics.export import (
+        AggregationTemporality,
+        PeriodicExportingMetricReader,
+    )
     from opentelemetry.sdk.resources import Resource
+
     _otel_available: bool = True
-    _DELTA_TEMPORALITY = {Counter: AggregationTemporality.DELTA, Histogram: AggregationTemporality.DELTA}
+    _DELTA_TEMPORALITY = {
+        Counter: AggregationTemporality.DELTA,
+        Histogram: AggregationTemporality.DELTA,
+    }
 except ImportError:
     _otel_available: bool = False
     _DELTA_TEMPORALITY = {}
 
 try:
-    from opentelemetry import trace as trace_api
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
     from opentelemetry.trace.status import StatusCode
+
     _trace_available: bool = True
 except ImportError:
     _trace_available: bool = False
@@ -239,7 +248,9 @@ class OTelMetricsPlugin(BasePlugin):
                 model = getattr(getattr(ctrl.llm, "config", None), "model", "") or ""
         return model or "unknown"
 
-    def _inc(self, name: str, value: int | float, attrs: dict[str, str] | None = None) -> None:
+    def _inc(
+        self, name: str, value: int | float, attrs: dict[str, str] | None = None
+    ) -> None:
         try:
             c = self._counters.get(name)
             if c is not None:
@@ -247,7 +258,9 @@ class OTelMetricsPlugin(BasePlugin):
         except Exception:
             logger.warning("metric add failed", metric=name)
 
-    def _observe(self, name: str, value: int | float, attrs: dict[str, str] | None = None) -> None:
+    def _observe(
+        self, name: str, value: int | float, attrs: dict[str, str] | None = None
+    ) -> None:
         try:
             h = self._histograms.get(name)
             if h is not None:
@@ -286,15 +299,21 @@ class OTelMetricsPlugin(BasePlugin):
         export_interval = int(self.options.get("export_interval", 30))
 
         resource = Resource.create({"service.name": service_name, **resource_attrs})
-        exporter = OTLPMetricExporter(endpoint=self._endpoint, preferred_temporality=_DELTA_TEMPORALITY)
-        reader = PeriodicExportingMetricReader(exporter, export_interval_millis=export_interval * 1000)
+        exporter = OTLPMetricExporter(
+            endpoint=self._endpoint, preferred_temporality=_DELTA_TEMPORALITY
+        )
+        reader = PeriodicExportingMetricReader(
+            exporter, export_interval_millis=export_interval * 1000
+        )
         self._provider = MeterProvider(resource=resource, metric_readers=[reader])
         self._meter = self._provider.get_meter("kohaku-terrarium")
 
         for name, desc in _COUNTER_DEFS:
             self._counters[name] = self._meter.create_counter(name, description=desc)
         for name, desc, unit in _HISTOGRAM_DEFS:
-            self._histograms[name] = self._meter.create_histogram(name, description=desc, unit=unit)
+            self._histograms[name] = self._meter.create_histogram(
+                name, description=desc, unit=unit
+            )
 
         if _trace_available:
             trace_ep = self._trace_endpoint_resolved
@@ -308,7 +327,11 @@ class OTelMetricsPlugin(BasePlugin):
             self._tracer_provider.add_span_processor(BatchSpanProcessor(span_exporter))
             self._tracer = self._tracer_provider.get_tracer("kohaku-terrarium")
 
-        logger.info("OTel metrics initialised", endpoint=self._endpoint, service=self.options.get("service_name", "kohaku-terrarium"))
+        logger.info(
+            "OTel metrics initialised",
+            endpoint=self._endpoint,
+            service=self.options.get("service_name", "kohaku-terrarium"),
+        )
 
     async def on_unload(self) -> None:
         if self._tracer_provider is not None:
@@ -341,7 +364,9 @@ class OTelMetricsPlugin(BasePlugin):
         self._inc("kt.agent.stops", 1, {"agent": self._agent_name})
         if self._session_start:
             elapsed = time.monotonic() - self._session_start
-            self._observe("kt.agent.session.duration", elapsed, {"agent": self._agent_name})
+            self._observe(
+                "kt.agent.session.duration", elapsed, {"agent": self._agent_name}
+            )
 
     # ── LLM hooks ───────────────────────────────────────────────────
 
@@ -349,7 +374,9 @@ class OTelMetricsPlugin(BasePlugin):
         key = id(messages)
         self._start_times[key] = time.monotonic()
         if self._tracer is not None:
-            span = self._tracer.start_span("kt.llm.call", attributes={"request_source": "main"})
+            span = self._tracer.start_span(
+                "kt.llm.call", attributes={"request_source": "main"}
+            )
             self._active_spans[key] = span
         return None
 
@@ -380,7 +407,9 @@ class OTelMetricsPlugin(BasePlugin):
             span.set_attribute("llm.prompt_tokens", u.get("prompt_tokens", 0))
             span.set_attribute("llm.completion_tokens", u.get("completion_tokens", 0))
             span.set_attribute("llm.cache_read_tokens", u.get("cached_tokens", 0))
-            span.set_attribute("llm.cache_creation_tokens", u.get("cache_write_tokens", 0))
+            span.set_attribute(
+                "llm.cache_creation_tokens", u.get("cache_write_tokens", 0)
+            )
             span.set_status(StatusCode.OK)
             span.end()
 
@@ -389,14 +418,20 @@ class OTelMetricsPlugin(BasePlugin):
     # ── Tool hooks ──────────────────────────────────────────────────
 
     async def pre_tool_dispatch(self, call, context, **kwargs):
-        self._inc("kt.tool.dispatches", 1, {"tool_name": getattr(call, "name", ""), "session_id": self._session_id})
+        self._inc(
+            "kt.tool.dispatches",
+            1,
+            {"tool_name": getattr(call, "name", ""), "session_id": self._session_id},
+        )
         return None
 
     async def pre_tool_execute(self, args, **kwargs):
         job_id = kwargs.get("job_id", "")
         self._start_times[job_id] = time.monotonic()
         if self._tracer is not None:
-            span = self._tracer.start_span("kt.tool.execute", attributes={"tool_name": kwargs.get("tool_name", "")})
+            span = self._tracer.start_span(
+                "kt.tool.execute", attributes={"tool_name": kwargs.get("tool_name", "")}
+            )
             self._active_spans[job_id] = span
         return None
 
@@ -429,10 +464,13 @@ class OTelMetricsPlugin(BasePlugin):
         job_id = kwargs.get("job_id", "")
         self._start_times[job_id] = time.monotonic()
         if self._tracer is not None:
-            span = self._tracer.start_span("kt.subagent.run", attributes={
-                "subagent_name": kwargs.get("name", ""),
-                "request_source": "subagent",
-            })
+            span = self._tracer.start_span(
+                "kt.subagent.run",
+                attributes={
+                    "subagent_name": kwargs.get("name", ""),
+                    "request_source": "subagent",
+                },
+            )
             self._active_spans[job_id] = span
         return None
 
@@ -444,7 +482,11 @@ class OTelMetricsPlugin(BasePlugin):
         duration = (time.monotonic() - start) * 1000 if start is not None else 0
         success = getattr(result, "success", True)
         turns = getattr(result, "turns", 0)
-        attrs = {"subagent_name": name, "request_source": "subagent", "session_id": session_id}
+        attrs = {
+            "subagent_name": name,
+            "request_source": "subagent",
+            "session_id": session_id,
+        }
         self._inc("kt.subagent.runs", 1, attrs)
         self._observe("kt.subagent.duration", duration, attrs)
         self._observe("kt.subagent.turns", turns, attrs)
@@ -469,13 +511,19 @@ class OTelMetricsPlugin(BasePlugin):
         self._observe("kt.compact.context_length", context_length, attrs)
 
     async def on_compact_end(self, summary: str, messages_removed: int) -> None:
-        self._observe("kt.compact.messages_removed", messages_removed or 0, {"session_id": self._session_id})
+        self._observe(
+            "kt.compact.messages_removed",
+            messages_removed or 0,
+            {"session_id": self._session_id},
+        )
 
     # ── Event / interrupt callbacks ─────────────────────────────────
 
     async def on_event(self, event=None) -> None:
         event_type = getattr(event, "type", "unknown") if event else "unknown"
-        self._inc("kt.events", 1, {"event_type": event_type, "session_id": self._session_id})
+        self._inc(
+            "kt.events", 1, {"event_type": event_type, "session_id": self._session_id}
+        )
 
     async def on_interrupt(self) -> None:
         self._inc("kt.interrupts", 1, {"session_id": self._session_id})

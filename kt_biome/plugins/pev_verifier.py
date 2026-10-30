@@ -37,9 +37,7 @@ import json
 import re
 from typing import Any
 
-from kohakuterrarium.builtins.tools.bash import BashTool
-from kohakuterrarium.builtins.tools.grep import GrepTool
-from kohakuterrarium.builtins.tools.read import ReadTool
+from kohakuterrarium.builtins.tool_catalog import get_builtin_tool
 from kohakuterrarium.core.events import EventType, TriggerEvent
 from kohakuterrarium.modules.plugin.base import BasePlugin, PluginContext
 from kohakuterrarium.modules.subagent.base import SubAgent
@@ -384,23 +382,18 @@ class PEVVerifierPlugin(BasePlugin):
             self._ctx.agent_name, verifier.config.name
         )
 
-    _TOOL_FACTORIES: dict[str, Any] = {
-        "read": ReadTool,
-        "grep": GrepTool,
-        "bash": BashTool,
-    }
+    _VERIFIER_TOOL_NAMES = frozenset({"read", "grep", "bash"})
 
     def _build_verifier_tools(self) -> list[BaseTool]:
         """Assemble the verifier's tool set from the configured names."""
         tools: list[BaseTool] = []
         for name in self._verifier_tool_names:
-            factory = self._TOOL_FACTORIES.get(name.lower())
-            if factory is None:
+            if name.lower() not in self._VERIFIER_TOOL_NAMES:
                 logger.warning(
                     "PEV verifier_tools: unknown tool ignored", tool_name=name
                 )
                 continue
-            tools.append(factory())
+            tools.append(get_builtin_tool(name.lower()))
         tools.append(VerdictTool(self._capture_verdict))
         return tools
 

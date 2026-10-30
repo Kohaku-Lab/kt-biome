@@ -31,8 +31,8 @@ from kohakuterrarium.modules.plugin.base import BasePlugin, PluginContext
 from kohakuterrarium.modules.subagent.base import SubAgent
 from kohakuterrarium.modules.subagent.config import SubAgentConfig
 from kohakuterrarium.modules.tool.base import BaseTool, ExecutionMode, ToolResult
-from kohakuterrarium.session.embedding import create_embedder
-from kohakuterrarium.session.memory import SessionMemory
+from kohakuterrarium.session.memory.embedding import create_embedder
+from kohakuterrarium.session.memory.index import SessionMemory
 from kohakuterrarium.utils.logging import get_logger
 
 logger = get_logger(__name__)
