@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from kohakuterrarium.builtins.tools.bash import ShellTool
+from kohakuterrarium.builtins.tools.bash.bash import ShellTool
 from kohakuterrarium.modules.tool.base import ToolContext
 from kt_biome.tools import bash_docker as bash_docker_mod
 from kt_biome.tools.bash_docker import DockerBashTool

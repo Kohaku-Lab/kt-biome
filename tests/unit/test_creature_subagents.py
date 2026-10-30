@@ -6,7 +6,7 @@ import pytest
 import yaml
 
 from kohakuterrarium.bootstrap.subagents import create_subagent_config
-from kohakuterrarium.core.config_types import SubAgentConfigItem
+from kohakuterrarium.core.config.types import SubAgentConfigItem
 
 ROOT = Path(__file__).resolve().parents[2]
 

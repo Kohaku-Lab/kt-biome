@@ -7,24 +7,17 @@ Covers proposal §4.4 requirements:
   4. Blocks a known injection pattern (body suppressed, header kept).
   5. ``reload_per_turn`` reflects mtime changes.
 
-The plugin lives in ``kt-biome``; make sure that directory is on the
-import path before importing it.
 """
 
+import asyncio
 import os
-import sys
 import time
 from pathlib import Path
 
 import pytest
 
-# Make kt-biome importable even without an editable install.
-_BIOME_ROOT = Path(__file__).resolve().parents[2]
-if _BIOME_ROOT.exists() and str(_BIOME_ROOT) not in sys.path:
-    sys.path.insert(0, str(_BIOME_ROOT))
-
-from kohakuterrarium.modules.plugin.base import PluginContext  # noqa: E402
-from kt_biome.plugins.context_files import (  # noqa: E402
+from kohakuterrarium.modules.plugin.base import PluginContext
+from kt_biome.plugins.context_files import (
     DEFAULT_FILES,
     DEFAULT_INJECTION_PATTERNS,
     SENTINEL,
@@ -82,8 +75,6 @@ class TestDefaults:
             plugin = _make_plugin({"enabled": False})
             msgs = [{"role": "user", "content": "hi"}]
             assert await plugin.pre_llm_call(msgs) is None
-
-        import asyncio
 
         asyncio.run(run())
 

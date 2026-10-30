@@ -15,7 +15,7 @@ from kohakuterrarium.core.termination import (
     TerminationConfig,
 )
 from kohakuterrarium.modules.plugin.base import PluginContext
-from kohakuterrarium.modules.plugin.manager import PluginManager
+from kohakuterrarium.modules.plugin.manager.manager import PluginManager
 from kt_biome.plugins.termination_goal import TerminationGoalPlugin
 
 

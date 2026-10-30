@@ -16,6 +16,7 @@ import pytest
 from kohakuterrarium.core.scratchpad import Scratchpad
 from kohakuterrarium.modules.plugin.base import PluginContext
 from kohakuterrarium.parsing import ToolCallEvent
+from kt_biome.plugins.checkpoint import SCRATCHPAD_KEY, CheckpointPlugin
 
 pytestmark = pytest.mark.asyncio
 
@@ -115,7 +116,6 @@ def git_repo(tmp_path: Path) -> Path:
 
 async def test_plugin_loads_with_defaults(tmp_path: Path) -> None:
     """Plugin instantiates with no options and reports a sane default state."""
-    from kt_biome.plugins.checkpoint import CheckpointPlugin
 
     plugin = CheckpointPlugin()
     ctx = _make_context(tmp_path)
@@ -134,8 +134,6 @@ async def test_non_destructive_tool_not_checkpointed(tmp_path: Path) -> None:
     """A ``read`` call must NOT create a checkpoint entry."""
     if not GIT_AVAILABLE:
         pytest.skip("git not installed — checkpoint plugin is a no-op")
-
-    from kt_biome.plugins.checkpoint import CheckpointPlugin, SCRATCHPAD_KEY
 
     _init_git_repo(tmp_path)
     (tmp_path / "dirty.txt").write_text("dirty\n", encoding="utf-8")
@@ -156,7 +154,6 @@ async def test_non_destructive_tool_not_checkpointed(tmp_path: Path) -> None:
 
 async def test_write_tool_triggers_git_stash(git_repo: Path) -> None:
     """A ``write`` call in a git repo produces a stash + scratchpad entry."""
-    from kt_biome.plugins.checkpoint import CheckpointPlugin, SCRATCHPAD_KEY
 
     plugin = CheckpointPlugin()
     ctx = _make_context(git_repo, agent_name="swe")
@@ -195,7 +192,6 @@ async def test_write_tool_triggers_git_stash(git_repo: Path) -> None:
 
 async def test_destructive_bash_triggers_checkpoint(git_repo: Path) -> None:
     """``bash`` with a matching destructive pattern is snapshotted."""
-    from kt_biome.plugins.checkpoint import CheckpointPlugin
 
     plugin = CheckpointPlugin()
     ctx = _make_context(git_repo)
@@ -221,8 +217,6 @@ async def test_non_repo_cwd_is_silent_noop(tmp_path: Path) -> None:
     if not GIT_AVAILABLE:
         pytest.skip("git not installed — checkpoint plugin is a no-op")
 
-    from kt_biome.plugins.checkpoint import CheckpointPlugin
-
     plugin = CheckpointPlugin()
     ctx = _make_context(tmp_path)
     await plugin.on_load(ctx)
@@ -238,7 +232,6 @@ async def test_non_repo_cwd_is_silent_noop(tmp_path: Path) -> None:
 
 async def test_disabled_backend_short_circuits(git_repo: Path) -> None:
     """``backend: disabled`` prevents any subprocess or log mutation."""
-    from kt_biome.plugins.checkpoint import CheckpointPlugin
 
     plugin = CheckpointPlugin(options={"backend": "disabled"})
     ctx = _make_context(git_repo)
@@ -253,7 +246,6 @@ async def test_disabled_backend_short_circuits(git_repo: Path) -> None:
 
 async def test_agent_name_scoping(git_repo: Path) -> None:
     """``agent_names`` limits the plugin to the listed creatures."""
-    from kt_biome.plugins.checkpoint import CheckpointPlugin
 
     plugin = CheckpointPlugin(options={"agent_names": ["only-this-one"]})
     ctx = _make_context(git_repo, agent_name="someone-else")
@@ -268,7 +260,6 @@ async def test_agent_name_scoping(git_repo: Path) -> None:
 
 async def test_list_checkpoints_for_session_helper(git_repo: Path) -> None:
     """The classmethod reads entries directly off a Session scratchpad."""
-    from kt_biome.plugins.checkpoint import CheckpointPlugin
 
     plugin = CheckpointPlugin()
     ctx = _make_context(git_repo)

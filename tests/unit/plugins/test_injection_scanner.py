@@ -7,6 +7,7 @@ drive ``post_tool_execute`` directly and inspect the returned
 
 import pytest
 
+from kohakuterrarium.modules.plugin.base import PluginContext
 from kohakuterrarium.modules.tool.base import ToolResult
 from kt_biome.plugins.injection_scanner import (
     DEFAULT_PATTERNS,
@@ -236,8 +237,6 @@ def test_agent_names_restricts_scope() -> None:
     plugin = _make({"agent_names": ["other_agent"]})
     # No context → should_apply returns True as a safety fallback.
     assert plugin.should_apply() is True
-
-    from kohakuterrarium.modules.plugin.base import PluginContext
 
     ctx_match = PluginContext(agent_name="other_agent")
     ctx_miss = PluginContext(agent_name="main_agent")

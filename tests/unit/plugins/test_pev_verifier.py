@@ -1,28 +1,15 @@
-"""Tests for kt-biome PEV (Plan -> Execute -> Verify) plugin.
+"""Tests for kt-biome PEV (Plan -> Execute -> Verify) plugin."""
 
-The plugin lives outside the ``kohakuterrarium`` package, at
-``kt-biome/kt_biome/plugins/pev_verifier.py``. These tests add that
-sibling repo's root to ``sys.path`` for the duration of the module
-so the unit tests can import the plugin without requiring kt-biome to
-be pip-installed.
-"""
-
-import sys
-from pathlib import Path
 from typing import Any
 
 import pytest
 
-_KT_BIOME_ROOT = Path(__file__).resolve().parents[2]
-if str(_KT_BIOME_ROOT) not in sys.path:
-    sys.path.insert(0, str(_KT_BIOME_ROOT))
-
-from kt_biome.plugins.pev_verifier import (  # noqa: E402
+from kohakuterrarium.modules.plugin.base import PluginContext
+from kt_biome.plugins.pev_verifier import (
     PEVVerifierPlugin,
     _last_assistant_message,
     _recent_tool_call_present,
 )
-from kohakuterrarium.modules.plugin.base import PluginContext  # noqa: E402
 
 # ---------------------------------------------------------------------
 # Fixtures / helpers

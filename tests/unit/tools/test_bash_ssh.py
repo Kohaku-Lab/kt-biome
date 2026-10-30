@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from kohakuterrarium.builtins.tools.bash import ShellTool
+from kohakuterrarium.builtins.tools.bash.bash import ShellTool
 from kt_biome.tools import bash_ssh as bash_ssh_mod
 from kt_biome.tools.bash_ssh import SshBashTool
 

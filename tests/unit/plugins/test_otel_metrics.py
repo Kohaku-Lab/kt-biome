@@ -4,84 +4,22 @@ All OpenTelemetry imports are mocked — no real OTEL packages required.
 Uses a controllable ``Clock`` stub for deterministic timing behaviour.
 """
 
-import sys
 import tempfile
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-# ── Bootstrap: inject mock kohakuterrarium so the plugin can import ──
-
-_mock_kt = ModuleType("kohakuterrarium")
-_mock_kt_modules: dict[str, ModuleType] = {}
-
-
-def _ensure_mod(dotted: str) -> ModuleType:
-    parts = dotted.split(".")
-    for i in range(len(parts)):
-        partial = ".".join(parts[: i + 1])
-        if partial not in sys.modules:
-            m = ModuleType(partial)
-            sys.modules[partial] = m
-        if partial not in _mock_kt_modules:
-            _mock_kt_modules[partial] = sys.modules[partial]
-    return sys.modules[dotted]
-
-
-# BasePlugin and PluginContext — minimal stubs
-class _BasePlugin:
-    name: str = ""
-    priority: int = 0
-
-    def __init__(self, options=None):
-        pass
-
-
-base_mod = _ensure_mod("kohakuterrarium.modules.plugin.base")
-base_mod.BasePlugin = _BasePlugin
-base_mod.PluginContext = SimpleNamespace
-
-plugin_pkg = _ensure_mod("kohakuterrarium.modules.plugin")
-plugin_pkg.BasePlugin = _BasePlugin
-
-# kohakuterrarium.utils.logging
-logging_mod = _ensure_mod("kohakuterrarium.utils.logging")
-logging_mod.get_logger = lambda *a, **kw: MagicMock()
-
-# Ensure top-level kohakuterrarium and all needed subpackages
-_ensure_mod("kohakuterrarium.modules")
-_ensure_mod("kohakuterrarium.utils")
-_ensure_mod("kohakuterrarium.session")
-_ensure_mod("kohakuterrarium")
-
-# Suppress the real opentelemetry so the plugin's try/except sets
-# _otel_available = False cleanly (it already is False in this env).
-for _blocked in [
-    "opentelemetry",
-    "opentelemetry.exporter",
-    "opentelemetry.exporter.otlp",
-    "opentelemetry.exporter.otlp.proto",
-    "opentelemetry.exporter.otlp.proto.http",
-    "opentelemetry.exporter.otlp.proto.http.metric_exporter",
-    "opentelemetry.exporter.otlp.proto.http.trace_exporter",
-    "opentelemetry.sdk",
-    "opentelemetry.sdk.metrics",
-    "opentelemetry.sdk.metrics.export",
-    "opentelemetry.sdk.resources",
-    "opentelemetry.sdk.trace",
-    "opentelemetry.sdk.trace.export",
-    "opentelemetry.trace",
-    "opentelemetry.trace.status",
-]:
-    if _blocked not in sys.modules:
-        sys.modules[_blocked] = ModuleType(_blocked)
-
-# NOW import the module under test
 from kt_biome.plugins import otel_metrics as mod
 from kt_biome.plugins.otel_metrics import OTelMetricsPlugin
+
+
+@pytest.fixture(autouse=True)
+def _otel_sdk_absent(monkeypatch):
+    """Tests drive mocked instruments; the real SDK never initialises."""
+    monkeypatch.setattr(mod, "_otel_available", False)
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -108,7 +46,9 @@ def _ctx(agent_name: str = "test-agent", session_id: str = "sess-abc123"):
 def _make_plugin(options: dict | None = None) -> OTelMetricsPlugin:
     """Create plugin with mocked OTEL instruments pre-populated."""
     opts = dict(options or {})
-    opts.setdefault("collector_config_path", str(Path(tempfile.mkdtemp()) / "otel-collector.yaml"))
+    opts.setdefault(
+        "collector_config_path", str(Path(tempfile.mkdtemp()) / "otel-collector.yaml")
+    )
     plugin = OTelMetricsPlugin(opts)
     plugin._ctx = _ctx()
     for name, _ in mod._COUNTER_DEFS:
@@ -124,7 +64,9 @@ def _make_plugin(options: dict | None = None) -> OTelMetricsPlugin:
 @pytest.mark.asyncio
 async def test_graceful_no_otel() -> None:
     """1. Plugin is a no-op when OTEL packages are not available."""
-    plugin = OTelMetricsPlugin({"collector_config_path": str(Path(tempfile.mkdtemp()) / "otel-collector.yaml")})
+    plugin = OTelMetricsPlugin(
+        {"collector_config_path": str(Path(tempfile.mkdtemp()) / "otel-collector.yaml")}
+    )
     await plugin.on_load(_ctx("lonely"))
     assert plugin._agent_name == "lonely"
 
@@ -148,13 +90,34 @@ async def test_on_load_creates_instruments() -> None:
     mock_meter_provider_cls = MagicMock(return_value=mock_provider)
 
     p_avail = patch("kt_biome.plugins.otel_metrics._otel_available", True)
-    p_resource = patch("kt_biome.plugins.otel_metrics.Resource", mock_resource_cls, create=True)
-    p_exporter = patch("kt_biome.plugins.otel_metrics.OTLPMetricExporter", mock_exporter_cls, create=True)
-    p_reader = patch("kt_biome.plugins.otel_metrics.PeriodicExportingMetricReader", mock_reader_cls, create=True)
-    p_provider = patch("kt_biome.plugins.otel_metrics.MeterProvider", mock_meter_provider_cls, create=True)
+    p_resource = patch(
+        "kt_biome.plugins.otel_metrics.Resource", mock_resource_cls, create=True
+    )
+    p_exporter = patch(
+        "kt_biome.plugins.otel_metrics.OTLPMetricExporter",
+        mock_exporter_cls,
+        create=True,
+    )
+    p_reader = patch(
+        "kt_biome.plugins.otel_metrics.PeriodicExportingMetricReader",
+        mock_reader_cls,
+        create=True,
+    )
+    p_provider = patch(
+        "kt_biome.plugins.otel_metrics.MeterProvider",
+        mock_meter_provider_cls,
+        create=True,
+    )
 
     with p_avail, p_resource, p_exporter, p_reader, p_provider:
-        plugin = OTelMetricsPlugin({"endpoint": "http://otel:4318/v1/metrics", "collector_config_path": str(Path(tempfile.mkdtemp()) / "otel-collector.yaml")})
+        plugin = OTelMetricsPlugin(
+            {
+                "endpoint": "http://otel:4318/v1/metrics",
+                "collector_config_path": str(
+                    Path(tempfile.mkdtemp()) / "otel-collector.yaml"
+                ),
+            }
+        )
         await plugin.on_load(_ctx())
 
     mock_meter.create_counter.assert_called()
@@ -188,14 +151,19 @@ async def test_llm_call_timing_and_tokens() -> None:
         await plugin.pre_llm_call(msgs, model="gpt-5.4")
         clock.advance(0.5)
         await plugin.post_llm_call(
-            msgs, None, {"prompt_tokens": 100, "completion_tokens": 50},
+            msgs,
+            None,
+            {"prompt_tokens": 100, "completion_tokens": 50},
             model="gpt-5.4",
         )
 
     plugin._histograms["kt.llm.duration"].record.assert_called_once_with(
-        500.0, {"model": "gpt-5.4", "request_source": "main", "session_id": "sess-abc123"}
+        500.0,
+        {"model": "gpt-5.4", "request_source": "main", "session_id": "sess-abc123"},
     )
-    plugin._counters["kt.llm.calls"].add.assert_called_with(1, {"model": "gpt-5.4", "request_source": "main", "session_id": "sess-abc123"})
+    plugin._counters["kt.llm.calls"].add.assert_called_with(
+        1, {"model": "gpt-5.4", "request_source": "main", "session_id": "sess-abc123"}
+    )
     plugin._counters["kt.llm.tokens.prompt"].add.assert_called_with(
         100, {"model": "gpt-5.4", "request_source": "main", "session_id": "sess-abc123"}
     )
@@ -213,7 +181,10 @@ async def test_llm_call_usage_none() -> None:
     await plugin.pre_llm_call(msgs, model="test-model")
     await plugin.post_llm_call(msgs, None, None, model="test-model")
 
-    plugin._counters["kt.llm.calls"].add.assert_called_with(1, {"model": "test-model", "request_source": "main", "session_id": "sess-abc123"})
+    plugin._counters["kt.llm.calls"].add.assert_called_with(
+        1,
+        {"model": "test-model", "request_source": "main", "session_id": "sess-abc123"},
+    )
 
 
 @pytest.mark.asyncio
@@ -264,7 +235,9 @@ async def test_tool_execute_timing_and_errors() -> None:
     args, kwargs = plugin._histograms["kt.tool.duration"].record.call_args
     assert args[0] == pytest.approx(300.0)
     assert args[1] == {"tool_name": "bash", "session_id": "sess-abc123"}
-    plugin._counters["kt.tool.calls"].add.assert_called_with(1, {"tool_name": "bash", "session_id": "sess-abc123"})
+    plugin._counters["kt.tool.calls"].add.assert_called_with(
+        1, {"tool_name": "bash", "session_id": "sess-abc123"}
+    )
     plugin._counters["kt.tool.errors"].add.assert_not_called()
 
     # Failure path
@@ -274,7 +247,9 @@ async def test_tool_execute_timing_and_errors() -> None:
         result_fail = SimpleNamespace(success=False)
         await plugin.post_tool_execute(result_fail, tool_name="bash", job_id="j2")
 
-    plugin._counters["kt.tool.errors"].add.assert_called_with(1, {"tool_name": "bash", "session_id": "sess-abc123"})
+    plugin._counters["kt.tool.errors"].add.assert_called_with(
+        1, {"tool_name": "bash", "session_id": "sess-abc123"}
+    )
 
 
 @pytest.mark.asyncio
@@ -284,7 +259,9 @@ async def test_tool_result_none() -> None:
     await plugin.pre_tool_execute({"cmd": "ls"}, tool_name="bash", job_id="j3")
     await plugin.post_tool_execute(None, tool_name="bash", job_id="j3")
 
-    plugin._counters["kt.tool.calls"].add.assert_called_with(1, {"tool_name": "bash", "session_id": "sess-abc123"})
+    plugin._counters["kt.tool.calls"].add.assert_called_with(
+        1, {"tool_name": "bash", "session_id": "sess-abc123"}
+    )
     plugin._counters["kt.tool.errors"].add.assert_not_called()
 
 
@@ -295,21 +272,43 @@ async def test_subagent_run() -> None:
     clock = Clock()
 
     with patch("kt_biome.plugins.otel_metrics.time.monotonic", clock):
-        await plugin.pre_subagent_run(
-            "do something", name="worker", job_id="j4"
-        )
+        await plugin.pre_subagent_run("do something", name="worker", job_id="j4")
         clock.advance(1.0)
         result = SimpleNamespace(success=False, turns=7)
         await plugin.post_subagent_run(result, name="worker", job_id="j4")
 
-    plugin._counters["kt.subagent.runs"].add.assert_called_with(1, {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"})
+    plugin._counters["kt.subagent.runs"].add.assert_called_with(
+        1,
+        {
+            "subagent_name": "worker",
+            "request_source": "subagent",
+            "session_id": "sess-abc123",
+        },
+    )
     plugin._histograms["kt.subagent.duration"].record.assert_called_with(
-        1000.0, {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"}
+        1000.0,
+        {
+            "subagent_name": "worker",
+            "request_source": "subagent",
+            "session_id": "sess-abc123",
+        },
     )
     plugin._histograms["kt.subagent.turns"].record.assert_called_with(
-        7, {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"}
+        7,
+        {
+            "subagent_name": "worker",
+            "request_source": "subagent",
+            "session_id": "sess-abc123",
+        },
     )
-    plugin._counters["kt.subagent.errors"].add.assert_called_with(1, {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"})
+    plugin._counters["kt.subagent.errors"].add.assert_called_with(
+        1,
+        {
+            "subagent_name": "worker",
+            "request_source": "subagent",
+            "session_id": "sess-abc123",
+        },
+    )
 
 
 @pytest.mark.asyncio
@@ -318,7 +317,9 @@ async def test_compact_hooks() -> None:
     plugin = _make_plugin()
 
     await plugin.on_compact_start(context_length=5000)
-    plugin._counters["kt.compact.count"].add.assert_called_with(1, {"session_id": "sess-abc123"})
+    plugin._counters["kt.compact.count"].add.assert_called_with(
+        1, {"session_id": "sess-abc123"}
+    )
     plugin._histograms["kt.compact.context_length"].record.assert_called_with(
         5000, {"session_id": "sess-abc123"}
     )
@@ -342,7 +343,9 @@ async def test_on_event() -> None:
 
     # event=None defaults to "unknown"
     await plugin.on_event(None)
-    plugin._counters["kt.events"].add.assert_called_with(1, {"event_type": "unknown", "session_id": "sess-abc123"})
+    plugin._counters["kt.events"].add.assert_called_with(
+        1, {"event_type": "unknown", "session_id": "sess-abc123"}
+    )
 
 
 @pytest.mark.asyncio
@@ -351,7 +354,9 @@ async def test_on_interrupt() -> None:
     plugin = _make_plugin()
 
     await plugin.on_interrupt()
-    plugin._counters["kt.interrupts"].add.assert_called_with(1, {"session_id": "sess-abc123"})
+    plugin._counters["kt.interrupts"].add.assert_called_with(
+        1, {"session_id": "sess-abc123"}
+    )
 
 
 @pytest.mark.asyncio
@@ -368,7 +373,9 @@ async def test_session_duration() -> None:
     plugin._histograms["kt.agent.session.duration"].record.assert_called_with(
         42.0, {"agent": "session-test"}
     )
-    plugin._counters["kt.agent.stops"].add.assert_called_with(1, {"agent": "session-test"})
+    plugin._counters["kt.agent.stops"].add.assert_called_with(
+        1, {"agent": "session-test"}
+    )
 
 
 @pytest.mark.asyncio
@@ -376,7 +383,9 @@ async def test_on_agent_start_increments_starts() -> None:
     plugin = _make_plugin()
     plugin._agent_name = "test-agent"
     await plugin.on_agent_start()
-    plugin._counters["kt.agent.starts"].add.assert_called_with(1, {"agent": "test-agent"})
+    plugin._counters["kt.agent.starts"].add.assert_called_with(
+        1, {"agent": "test-agent"}
+    )
 
 
 @pytest.mark.asyncio
@@ -385,7 +394,9 @@ async def test_on_agent_stop_increments_stops() -> None:
     plugin._agent_name = "test-agent"
     plugin._session_start = 100.0
     await plugin.on_agent_stop()
-    plugin._counters["kt.agent.stops"].add.assert_called_with(1, {"agent": "test-agent"})
+    plugin._counters["kt.agent.stops"].add.assert_called_with(
+        1, {"agent": "test-agent"}
+    )
 
 
 def test_metric_names_immutable() -> None:
@@ -438,8 +449,14 @@ async def test_llm_tokens_cache_read_and_creation_split() -> None:
     msgs = ["msg"]
 
     await plugin.post_llm_call(
-        msgs, None,
-        {"prompt_tokens": 100, "completion_tokens": 50, "cached_tokens": 80, "cache_write_tokens": 30},
+        msgs,
+        None,
+        {
+            "prompt_tokens": 100,
+            "completion_tokens": 50,
+            "cached_tokens": 80,
+            "cache_write_tokens": 30,
+        },
         model="gpt-5.4",
     )
 
@@ -472,7 +489,11 @@ async def test_llm_attrs_include_request_source_main() -> None:
         clock.advance(0.1)
         await plugin.post_llm_call(msgs, None, {"prompt_tokens": 10}, model="m")
 
-    expected_attrs = {"model": "m", "request_source": "main", "session_id": "sess-abc123"}
+    expected_attrs = {
+        "model": "m",
+        "request_source": "main",
+        "session_id": "sess-abc123",
+    }
     plugin._counters["kt.llm.calls"].add.assert_called_with(1, expected_attrs)
 
 
@@ -487,7 +508,10 @@ async def test_llm_attrs_include_session_id() -> None:
 
     for call in plugin._counters["kt.llm.calls"].add.call_args_list:
         _, kwargs = call
-        assert kwargs.get("session_id") == "my-session-42" or call[0][1].get("session_id") == "my-session-42"
+        assert (
+            kwargs.get("session_id") == "my-session-42"
+            or call[0][1].get("session_id") == "my-session-42"
+        )
 
 
 @pytest.mark.asyncio
@@ -502,9 +526,15 @@ async def test_subagent_attrs_include_request_source_and_session() -> None:
         result = SimpleNamespace(success=True, turns=3)
         await plugin.post_subagent_run(result, name="worker", job_id="j10")
 
-    expected_attrs = {"subagent_name": "worker", "request_source": "subagent", "session_id": "sess-abc123"}
+    expected_attrs = {
+        "subagent_name": "worker",
+        "request_source": "subagent",
+        "session_id": "sess-abc123",
+    }
     plugin._counters["kt.subagent.runs"].add.assert_called_with(1, expected_attrs)
-    plugin._histograms["kt.subagent.duration"].record.assert_called_with(2000.0, expected_attrs)
+    plugin._histograms["kt.subagent.duration"].record.assert_called_with(
+        2000.0, expected_attrs
+    )
     plugin._histograms["kt.subagent.turns"].record.assert_called_with(3, expected_attrs)
 
 
@@ -543,7 +573,9 @@ class SpanRecorder:
     def __init__(self) -> None:
         self.spans: list[SimpleNamespace] = []
 
-    def start_span(self, name: str, attributes: dict | None = None, **kw: Any) -> SimpleNamespace:
+    def start_span(
+        self, name: str, attributes: dict | None = None, **kw: Any
+    ) -> SimpleNamespace:
         span = SimpleNamespace(
             name=name,
             attributes=dict(attributes or {}),
@@ -558,7 +590,9 @@ class SpanRecorder:
         return span
 
 
-def _make_tracer_plugin(options: dict | None = None) -> tuple[OTelMetricsPlugin, SpanRecorder]:
+def _make_tracer_plugin(
+    options: dict | None = None,
+) -> tuple[OTelMetricsPlugin, SpanRecorder]:
     """Create plugin with mocked OTEL instruments AND a tracer that records spans."""
     plugin = _make_plugin(options)
     recorder = SpanRecorder()
@@ -589,8 +623,14 @@ async def test_llm_call_emits_span() -> None:
         await plugin.pre_llm_call(msgs, model="deepseek-v4")
         clock.advance(0.3)
         await plugin.post_llm_call(
-            msgs, None,
-            {"prompt_tokens": 100, "completion_tokens": 50, "cached_tokens": 20, "cache_write_tokens": 5},
+            msgs,
+            None,
+            {
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+                "cached_tokens": 20,
+                "cache_write_tokens": 5,
+            },
             model="deepseek-v4",
         )
 
@@ -681,19 +721,61 @@ async def test_on_load_creates_tracer_when_otel_available() -> None:
 
     p_avail = patch("kt_biome.plugins.otel_metrics._otel_available", True)
     p_trace = patch("kt_biome.plugins.otel_metrics._trace_available", True)
-    p_resource = patch("kt_biome.plugins.otel_metrics.Resource", MagicMock(), create=True)
-    p_exporter = patch("kt_biome.plugins.otel_metrics.OTLPMetricExporter", MagicMock(), create=True)
-    p_reader = patch("kt_biome.plugins.otel_metrics.PeriodicExportingMetricReader", MagicMock(), create=True)
-    p_provider = patch("kt_biome.plugins.otel_metrics.MeterProvider", MagicMock(return_value=mock_provider), create=True)
-    p_span_exporter = patch("kt_biome.plugins.otel_metrics.OTLPSpanExporter", MagicMock(), create=True)
-    p_span_processor = patch("kt_biome.plugins.otel_metrics.BatchSpanProcessor", MagicMock(), create=True)
-    p_tracer_provider = patch("kt_biome.plugins.otel_metrics.TracerProvider", MagicMock(return_value=mock_tracer_provider), create=True)
-    p_trace_api = patch("kt_biome.plugins.otel_metrics.trace_api", MagicMock(), create=True)
-    p_status = patch("kt_biome.plugins.otel_metrics.StatusCode", MagicMock(), create=True)
+    p_resource = patch(
+        "kt_biome.plugins.otel_metrics.Resource", MagicMock(), create=True
+    )
+    p_exporter = patch(
+        "kt_biome.plugins.otel_metrics.OTLPMetricExporter", MagicMock(), create=True
+    )
+    p_reader = patch(
+        "kt_biome.plugins.otel_metrics.PeriodicExportingMetricReader",
+        MagicMock(),
+        create=True,
+    )
+    p_provider = patch(
+        "kt_biome.plugins.otel_metrics.MeterProvider",
+        MagicMock(return_value=mock_provider),
+        create=True,
+    )
+    p_span_exporter = patch(
+        "kt_biome.plugins.otel_metrics.OTLPSpanExporter", MagicMock(), create=True
+    )
+    p_span_processor = patch(
+        "kt_biome.plugins.otel_metrics.BatchSpanProcessor", MagicMock(), create=True
+    )
+    p_tracer_provider = patch(
+        "kt_biome.plugins.otel_metrics.TracerProvider",
+        MagicMock(return_value=mock_tracer_provider),
+        create=True,
+    )
+    p_trace_api = patch(
+        "kt_biome.plugins.otel_metrics.trace_api", MagicMock(), create=True
+    )
+    p_status = patch(
+        "kt_biome.plugins.otel_metrics.StatusCode", MagicMock(), create=True
+    )
 
-    with p_avail, p_trace, p_resource, p_exporter, p_reader, p_provider, \
-         p_span_exporter, p_span_processor, p_tracer_provider, p_trace_api, p_status:
-        plugin = OTelMetricsPlugin({"endpoint": "http://otel:4318/v1/metrics", "collector_config_path": str(Path(tempfile.mkdtemp()) / "otel-collector.yaml")})
+    with (
+        p_avail,
+        p_trace,
+        p_resource,
+        p_exporter,
+        p_reader,
+        p_provider,
+        p_span_exporter,
+        p_span_processor,
+        p_tracer_provider,
+        p_trace_api,
+        p_status,
+    ):
+        plugin = OTelMetricsPlugin(
+            {
+                "endpoint": "http://otel:4318/v1/metrics",
+                "collector_config_path": str(
+                    Path(tempfile.mkdtemp()) / "otel-collector.yaml"
+                ),
+            }
+        )
         await plugin.on_load(_ctx())
 
     mock_tracer_provider.get_tracer.assert_called_once()
@@ -740,7 +822,9 @@ async def test_compact_hooks_include_session_id() -> None:
     plugin = _make_plugin()
 
     await plugin.on_compact_start(context_length=5000)
-    plugin._counters["kt.compact.count"].add.assert_called_with(1, {"session_id": "sess-abc123"})
+    plugin._counters["kt.compact.count"].add.assert_called_with(
+        1, {"session_id": "sess-abc123"}
+    )
     plugin._histograms["kt.compact.context_length"].record.assert_called_with(
         5000, {"session_id": "sess-abc123"}
     )
@@ -767,7 +851,9 @@ async def test_on_interrupt_includes_session_id() -> None:
     """32. on_interrupt includes session_id in attrs."""
     plugin = _make_plugin()
     await plugin.on_interrupt()
-    plugin._counters["kt.interrupts"].add.assert_called_with(1, {"session_id": "sess-abc123"})
+    plugin._counters["kt.interrupts"].add.assert_called_with(
+        1, {"session_id": "sess-abc123"}
+    )
 
 
 @pytest.mark.asyncio
@@ -813,7 +899,7 @@ async def test_collector_config_created_on_first_load() -> None:
         await plugin.on_load(_ctx("config-test"))
 
         assert config_path.exists()
-        content = config_path.read_text()
+        content = config_path.read_text(encoding="utf-8")
         assert "receivers:" in content
         assert "otlp:" in content
         assert "exporters:" in content

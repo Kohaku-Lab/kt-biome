@@ -9,21 +9,13 @@ Covers (per plans/harness/proposal.md §4.10):
 """
 
 import asyncio
-import sys
 from datetime import datetime, timedelta
-from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
 import pytest
 
-# Make kt_biome importable without requiring an editable install of the
-# sibling package.
-_KT_BIOME = Path(__file__).resolve().parents[2]
-if str(_KT_BIOME) not in sys.path:
-    sys.path.insert(0, str(_KT_BIOME))
-
-from kt_biome.triggers.cron import (  # noqa: E402
+from kt_biome.triggers.cron import (
     CronExpressionError,
     CronTrigger,
     _BuiltinCron,
