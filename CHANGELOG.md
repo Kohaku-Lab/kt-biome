@@ -1,5 +1,21 @@
 # Changelog
 
+## 4.1.0
+
+Requires KohakuTerrarium >=2.2.0,<3.0.0.
+
+### Changes
+
+- Imports follow the 2.2 module layout: session memory under
+  `kohakuterrarium.session.memory`, the plugin manager under
+  `kohakuterrarium.modules.plugin.manager.manager`.
+- The PEV verifier resolves its `read`, `grep` and `bash` tools through the
+  builtin tool catalog instead of importing their classes by module path.
+- Tests are grouped under `tests/unit/{plugins,tools,triggers,io}` to mirror
+  `kt_biome`; the OpenTelemetry plugin test imports the real core instead of
+  injecting stand-in modules.
+- The `git-safety` fragment test renders an include of the published fragment.
+
 ## 4.0.0
 
 Requires KohakuTerrarium >2.1.7,<3.0.0.

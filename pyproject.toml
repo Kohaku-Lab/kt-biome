@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kt-biome"
-version = "4.0.0"
+version = "4.1.0"
 description = "Default creatures, terrariums, plugins, tools, I/O, and triggers for KohakuTerrarium"
 requires-python = ">=3.12"
 dependencies = []
@@ -21,4 +21,6 @@ include = ["kt_biome*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
+pythonpath = ["."]
+addopts = "--import-mode=importlib"
 asyncio_mode = "auto"
