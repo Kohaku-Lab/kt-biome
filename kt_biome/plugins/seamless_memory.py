@@ -228,6 +228,7 @@ class SeamlessMemoryPlugin(BasePlugin):
     priority = 45
 
     def __init__(self, options: dict[str, Any] | None = None):
+        super().__init__()
         opts = options or {}
         self._model = opts.get("model", "openrouter/xiaomi/mimo-v2-flash")
         self._min_turns = int(opts.get("min_turns_before_active", 2))
@@ -263,9 +264,7 @@ class SeamlessMemoryPlugin(BasePlugin):
             embed_config = store.state.get("embedding_config")
             if embed_config:
                 embedder = create_embedder(embed_config)
-            self._session_memory = SessionMemory(
-                str(store.path), embedder=embedder, store=store
-            )
+            self._session_memory = SessionMemory(str(store.path), embedder=embedder)
         except Exception as e:
             logger.warning("Session memory init failed", error=str(e))
 
