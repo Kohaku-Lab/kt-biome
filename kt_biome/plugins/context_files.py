@@ -31,12 +31,12 @@ Usage in config.yaml::
             - .hermes.md
           walk_from: cwd          # cwd/agent_path = the agent's pwd; or <fixed path>
           stop_at: git_root       # git_root | filesystem_root | <fixed path>
-          max_total_bytes: 32768
-          max_per_file_bytes: 16384
+          max_total_bytes: 131072
+          max_per_file_bytes: 65536
           injection_patterns: []  # list of regex strings (overrides defaults)
           injection_action: block # block | annotate
           position: after_system  # after_system | prepend_last_user
-          preamble: "Repository context files loaded by KohakuTerrarium:"
+          preamble: ""            # empty by default; naming the block "data" demotes it
           agent_names: []
           reload_per_turn: true
 """
@@ -79,6 +79,13 @@ DEFAULT_INJECTION_PATTERNS: list[str] = [
 
 SENTINEL = "<!-- kt-context-files -->"
 
+# A preamble that names the block as "repository context files" teaches the
+# model to file the content under data, not instructions. Default to none and
+# let a deployment opt in to its own framing.
+DEFAULT_PREAMBLE = ""
+DEFAULT_MAX_TOTAL_BYTES = 128 * 1024
+DEFAULT_MAX_PER_FILE_BYTES = 64 * 1024
+
 
 # ── Options ──────────────────────────────────────────────────────────
 
@@ -89,12 +96,12 @@ class _Options:
     files: list[str] = field(default_factory=list)
     walk_from: str = "cwd"
     stop_at: str = "git_root"
-    max_total_bytes: int = 32768
-    max_per_file_bytes: int = 16384
+    max_total_bytes: int = DEFAULT_MAX_TOTAL_BYTES
+    max_per_file_bytes: int = DEFAULT_MAX_PER_FILE_BYTES
     injection_patterns: list[str] | None = None
     injection_action: str = "block"
     position: str = "after_system"
-    preamble: str = "Repository context files loaded by KohakuTerrarium:"
+    preamble: str = DEFAULT_PREAMBLE
     agent_names: list[str] = field(default_factory=list)
     reload_per_turn: bool = True
 
@@ -106,16 +113,14 @@ class _Options:
             files=list(opts.get("files") or DEFAULT_FILES),
             walk_from=str(opts.get("walk_from", "cwd")),
             stop_at=str(opts.get("stop_at", "git_root")),
-            max_total_bytes=int(opts.get("max_total_bytes", 32768)),
-            max_per_file_bytes=int(opts.get("max_per_file_bytes", 16384)),
+            max_total_bytes=int(opts.get("max_total_bytes", DEFAULT_MAX_TOTAL_BYTES)),
+            max_per_file_bytes=int(
+                opts.get("max_per_file_bytes", DEFAULT_MAX_PER_FILE_BYTES)
+            ),
             injection_patterns=opts.get("injection_patterns"),
             injection_action=str(opts.get("injection_action", "block")),
             position=str(opts.get("position", "after_system")),
-            preamble=str(
-                opts.get(
-                    "preamble", "Repository context files loaded by KohakuTerrarium:"
-                )
-            ),
+            preamble=str(opts.get("preamble", DEFAULT_PREAMBLE)),
             agent_names=list(opts.get("agent_names") or []),
             reload_per_turn=bool(opts.get("reload_per_turn", True)),
         )
@@ -184,6 +189,7 @@ class ContextFilesPlugin(BasePlugin):
         self, messages: list[dict], **kwargs: Any
     ) -> list[dict] | None:
         if not self._opts.enabled:
+            logger.debug("context_files: disabled by option, nothing injected")
             return None
         try:
             if self._ctx is not None and not self.should_apply(self._ctx):
@@ -209,6 +215,12 @@ class ContextFilesPlugin(BasePlugin):
         stop = self._resolve_stop_anchor(root)
         matches = self._discover_files(root, stop)
         if not matches:
+            logger.debug(
+                "context_files: no matching files found, nothing injected",
+                root=str(root),
+                stop=str(stop),
+                patterns=list(self._opts.files),
+            )
             self._cached_payload = ""
             return None
 
@@ -253,10 +265,19 @@ class ContextFilesPlugin(BasePlugin):
                 break
 
         if not blocks:
+            logger.debug(
+                "context_files: every matched file produced an empty block",
+                matched=len(matches),
+            )
             self._cached_payload = ""
             return None
 
-        payload = "\n\n".join([SENTINEL, self._opts.preamble, ""] + blocks + [SENTINEL])
+        parts = [SENTINEL]
+        if self._opts.preamble:
+            parts.append(self._opts.preamble)
+        parts.extend(blocks)
+        parts.append(SENTINEL)
+        payload = "\n\n".join(parts)
         self._cached_payload = payload
         return payload
 

@@ -60,6 +60,46 @@ class TestDefaults:
         assert plugin._opts.position == "after_system"
         assert plugin._opts.reload_per_turn is True
 
+    def test_defaults_do_not_demote_the_block_to_data(self):
+        # A preamble naming the block "repository context files" teaches the
+        # model to treat it as data rather than instructions.
+        plugin = _make_plugin()
+        assert plugin._opts.preamble == ""
+        assert plugin._opts.max_total_bytes == 128 * 1024
+        assert plugin._opts.max_per_file_bytes == 64 * 1024
+
+    @pytest.mark.asyncio
+    async def test_default_payload_has_no_context_file_framing(
+        self, tmp_path: Path, cwd_chdir
+    ):
+        root = _fake_git_repo(tmp_path)
+        (root / "AGENTS.md").write_text("Follow these rules.")
+        cwd_chdir(root)
+
+        result = await _make_plugin({"files": ["AGENTS.md"]}).pre_llm_call(
+            [{"role": "user", "content": "hi"}]
+        )
+
+        assert result is not None
+        body = result[0]["content"]
+        assert "Repository context files" not in body
+        assert "Follow these rules." in body
+
+    @pytest.mark.asyncio
+    async def test_configured_preamble_is_still_injected(
+        self, tmp_path: Path, cwd_chdir
+    ):
+        root = _fake_git_repo(tmp_path)
+        (root / "AGENTS.md").write_text("Follow these rules.")
+        cwd_chdir(root)
+
+        result = await _make_plugin(
+            {"files": ["AGENTS.md"], "preamble": "Workspace rules:"}
+        ).pre_llm_call([{"role": "user", "content": "hi"}])
+
+        assert result is not None
+        assert "Workspace rules:" in result[0]["content"]
+
     def test_default_patterns_compile(self):
         plugin = _make_plugin()
         assert len(plugin._patterns) == len(DEFAULT_INJECTION_PATTERNS)
